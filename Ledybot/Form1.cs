@@ -34,6 +34,7 @@ namespace Ledybot
         private int botNumber = -1;
 
         private GTSBot7 GTSBot7;
+        private GTSBot6 GTSBot6;
         public EggBot eggbot;
 
         public ArrayList banlist = new ArrayList();
@@ -92,7 +93,8 @@ namespace Ledybot
             InfoReadyEventArgs args = (InfoReadyEventArgs)e;
 
             string log = args.info;
-            if (log.Contains("niji_loc"))
+
+            if (log.Contains("niji_loc")) // Sun and Moon
             {
                 string splitlog = log.Substring(log.IndexOf(", pname: niji_loc") - 8, log.Length - log.IndexOf(", pname: niji_loc"));
                 pid = Convert.ToInt32("0x" + splitlog.Substring(0, 8), 16);
@@ -106,13 +108,13 @@ namespace Ledybot
                 partyOff = 0x34195E10;
                 eggOff = 0x3313EDD8;
 
-            } else if(log.Contains("momiji"))
+            } else if(log.Contains("momiji")) // Ultra Sun and Moon
             {
                 string splitlog = log.Substring(log.IndexOf(", pname:   momiji") - 8, log.Length - log.IndexOf(", pname:   momiji"));
                 pid = Convert.ToInt32("0x" + splitlog.Substring(0, 8), 16);
                 Program.helper.pid = pid;
-                Program.scriptHelper.write(0x3F341C, BitConverter.GetBytes(0xE3A01000), pid); 
-                Program.scriptHelper.write(0x3F3420, BitConverter.GetBytes(0xE3A01000), pid);
+                Program.scriptHelper.write(0x3F3424, BitConverter.GetBytes(0xE3A01000), pid); // Ultra Sun  // NFC ON: E3A01001 NFC OFF: E3A01000
+                Program.scriptHelper.write(0x3F3428, BitConverter.GetBytes(0xE3A01000), pid); // Ultra Moon // NFC ON: E3A01001 NFC OFF: E3A01000
                 game = 1;
                 MessageBox.Show("Connection Successful!");
 
@@ -121,6 +123,59 @@ namespace Ledybot
                 partyOff = 0x33F7FA44;
                 eggOff = 0x3307B1E8;
             }
+
+            else if (args.info.Contains("sango-1")) // Omega Ruby
+            {
+                string splitlog = log.Substring(log.IndexOf(", pname:  sango-1") - 8, log.Length - log.IndexOf(", pname:  sango-1"));
+                pid = Convert.ToInt32("0x" + splitlog.Substring(0, 8), 16);
+                Program.helper.pid = pid;
+                Program.f1.ChangeStatus("Connection Successful!");
+                game = 3;
+                boxOff = 0x8C9E134;
+               // wcOff = 0x33075BF4;
+                partyOff = 0x8CFB26C;
+                eggOff = 0x8C88358;
+            }
+
+            else if (args.info.Contains("sango-2")) // Alpha Sapphire
+            {
+                string splitlog = log.Substring(log.IndexOf(", pname:  sango-2") - 8, log.Length - log.IndexOf(", pname:  sango-2"));
+                pid = Convert.ToInt32("0x" + splitlog.Substring(0, 8), 16);
+                Program.helper.pid = pid;
+                Program.f1.ChangeStatus("Connection Successful!");
+                game = 3;
+                boxOff = 0x8C9E134;
+               // wcOff = 0x33075BF4;
+                partyOff = 0x8CFB26C;
+                eggOff = 0x8C88358;
+            }
+
+            else if (args.info.Contains("kujira-1")) // X
+            {
+                string splitlog = log.Substring(log.IndexOf(", pname: kujira-1") - 8, log.Length - log.IndexOf(", pname: kujira-1"));
+                pid = Convert.ToInt32("0x" + splitlog.Substring(0, 8), 16);
+                Program.helper.pid = pid;
+                Program.f1.ChangeStatus("Connection Successful!");
+                game = 4;
+                boxOff = 0x8C861C8;
+                // wcOff = 0x33075BF4;
+                partyOff = 0x8CE1CF8;
+                eggOff = 0x8C80124;
+            }
+
+            else if (args.info.Contains("kujira-2")) // Y
+            {
+                string splitlog = log.Substring(log.IndexOf(", pname: kujira-2") - 8, log.Length - log.IndexOf(", pname: kujira-2"));
+                pid = Convert.ToInt32("0x" + splitlog.Substring(0, 8), 16);
+                Program.helper.pid = pid;
+                Program.f1.ChangeStatus("Connection Successful!");
+                game = 4;
+                boxOff = 0x8C861C8;
+                // wcOff = 0x33075BF4;
+                partyOff = 0x8CE1CF8;
+                eggOff = 0x8C80124;
+            }
+
         }
 
         public void getCountries()
@@ -219,28 +274,58 @@ namespace Ledybot
             {
                 tradeDirection = 2;
             }
-            GTSBot7 = new GTSBot7(pid, combo_pkmnList.SelectedIndex + 1, combo_gender.SelectedIndex, combo_levelrange.SelectedIndex ,cb_Blacklist.Checked, cb_Reddit.Checked, tradeDirection, tb_waittime.Text, tb_consoleName.Text, cb_UseLedySync.Checked, tb_LedySyncIP.Text, tb_LedySyncPort.Text, game, true, "127.0.0.1", "3001");
-            Task<int> Bot = GTSBot7.RunBot();
-            int result = await Bot;
-            if (botStop)
-                result = 8;
-            switch (result)
+
+            if (game == 1 || game == 2) // SUMO + USUM
             {
-                case 1:
-                    MessageBox.Show("All Pokemon Traded.", "GTS Bot", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    break;
-                case 8:
-                    MessageBox.Show("Bot stopped by user.", "GTS Bot", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    break;
-                default:
-                    MessageBox.Show("An error has occurred.", "GTS Bot", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    break;
+                GTSBot7 = new GTSBot7(pid, combo_pkmnList.SelectedIndex + 1, combo_gender.SelectedIndex, combo_levelrange.SelectedIndex, cb_Blacklist.Checked, cb_Reddit.Checked, tradeDirection, tb_waittime.Text, tb_consoleName.Text, cb_UseLedySync.Checked, tb_LedySyncIP.Text, tb_LedySyncPort.Text, game);
+                Task<int> Bot = GTSBot7.RunBot();
+                int result = await Bot;
+                if (botStop)
+                    result = 8;
+                switch (result)
+                {
+                    case 1:
+                        MessageBox.Show("All Pokemon Traded.", "GTS Bot", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        break;
+                    case 8:
+                        MessageBox.Show("Bot stopped by user.", "GTS Bot", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        break;
+                    default:
+                        MessageBox.Show("An error has occurred.", "GTS Bot", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        break;
+                }
+                Program.gd.enableButtons();
+                btn_Stop.Enabled = false;
+                btn_Start.Enabled = true;
+                botWorking = false;
+                botNumber = -1;
             }
-            Program.gd.enableButtons();
-            btn_Stop.Enabled = false;
-            btn_Start.Enabled = true;
-            botWorking = false;
-            botNumber = -1;
+            else if (game == 3 || game == 4) // XY + ORAS
+            {
+                GTSBot6 = new GTSBot6(pid, combo_pkmnList.SelectedIndex + 1, combo_gender.SelectedIndex, combo_levelrange.SelectedIndex, cb_Blacklist.Checked, cb_Reddit.Checked, tradeDirection, tb_waittime.Text, tb_consoleName.Text, cb_UseLedySync.Checked, tb_LedySyncIP.Text, tb_LedySyncPort.Text, game,tb_IP.Text);
+                Task<int> Bot = GTSBot6.RunBot();
+                int result = await Bot;
+                if (botStop)
+                    result = 8;
+                switch (result)
+                {
+                    case 1:
+                        MessageBox.Show("All Pokemon Traded.", "GTS Bot", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        break;
+                    case 8:
+                        MessageBox.Show("Bot stopped by user.", "GTS Bot", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        break;
+                    default:
+                        MessageBox.Show("An error has occurred.", "GTS Bot", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        break;
+                }
+                Program.gd.enableButtons();
+                btn_Stop.Enabled = false;
+                btn_Start.Enabled = true;
+                botWorking = false;
+                botNumber = -1;
+            }
+           
         }
 
         public void AppendListViewItem(string szTrainerName, string szNickname, string szCountry, string szSubRegion, string szSent, string fc, string page, string index)
@@ -269,10 +354,20 @@ namespace Ledybot
 
         private void btn_Stop_Click(object sender, EventArgs e)
         {
-            GTSBot7.botstop = true;
-            btn_Start.Enabled = true;
-            btn_Stop.Enabled = false;
-            botStop = true;
+            if (game == 1 || game == 2) // SUMO + USUM
+            {
+                GTSBot7.botstop = true;
+                btn_Start.Enabled = true;
+                btn_Stop.Enabled = false;
+                botStop = true;
+            }
+            else if (game == 3 || game == 4) // XY + ORAS
+            {
+                GTSBot6.botstop = true;
+                btn_Start.Enabled = true;
+                btn_Stop.Enabled = false;
+                botStop = true;
+            }
         }
 
         private void btn_Export_Click(object sender, EventArgs e)
@@ -421,13 +516,23 @@ namespace Ledybot
             if (Program.Connected)
             {
 
-
-                if(GTSBot7 != null)
+                if (game == 1 || game == 2) // SUMO + USUM
                 {
-                    GTSBot7.RequestStop();
+                    if (GTSBot7 != null)
+                    {
+                        GTSBot7.RequestStop();
+                    }
                 }
 
-                if(eggbot != null)
+                if (game == 1 || game == 2) // XY + ORAS
+                {
+                    if (GTSBot6 != null)
+                    {
+                        GTSBot6.RequestStop();
+                    }
+                }
+
+                if (eggbot != null)
                 {
                     eggbot.RequestStop();
                 }

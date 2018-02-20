@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using System.Net.Sockets;
 using System.Threading;
 using System.Net;
+using System.Windows.Forms;
 
 namespace Ledybot
 {
@@ -129,33 +130,9 @@ namespace Ledybot
             }
         }
 
-        private void didTradeTV(byte[] principal, string consoleName, string trainerName, string country, string region, string pokemon, string szFC, string page, string index)
-        {
-            NetworkStream clientStream = tvClient.GetStream();
-            byte[] buffer = new byte[4096];
-            byte[] messageID = { 0x00 };
-            string szmessage = consoleName + '\t' + trainerName + '\t' + country + '\t' + region + '\t' + pokemon + '\t' + page + "\t" + index + "\t";
-            byte[] toSend = Encoding.UTF8.GetBytes(szmessage);
 
-            buffer = messageID.Concat(principal).Concat(toSend).ToArray();
-            clientStream.Write(buffer, 0, buffer.Length);
-            clientStream.Flush();
-            byte[] message = new byte[4096];
-            try
-            {
-                int bytesRead = clientStream.Read(message, 0, 4096);
-                if(message[0] == 0x01)
-                {
-                    Program.f1.ChangeStatus("LedybotTV message sent.");
-                }
-            }
-            catch
-            {
-                return;
-            }
-        }
 
-        public GTSBot7(int iP, int iPtF, int iPtFGender, int iPtFLevel, bool bBlacklist, bool bReddit, int iSearchDirection, string waittime, string consoleName, bool useLedySync, string ledySyncIp, string ledySyncPort, int game, bool useLedybotTV, string ledybotTVIp, string ledybotTVPort)
+        public GTSBot7(int iP, int iPtF, int iPtFGender, int iPtFLevel, bool bBlacklist, bool bReddit, int iSearchDirection, string waittime, string consoleName, bool useLedySync, string ledySyncIp, string ledySyncPort, int game)
         {
             this.iPokemonToFind = iPtF;
             this.iPokemonToFindGender = iPtFGender;
@@ -173,27 +150,20 @@ namespace Ledybot
                 syncClient.Connect(serverEndPointSync);
             }
 
-            if(useLedybotTV)
-            {
-                this.useLedybotTV = useLedybotTV;
-                int iPort = Int32.Parse(ledybotTVPort);
-                this.serverEndPointTV = new IPEndPoint(IPAddress.Parse(ledybotTVIp), iPort);
-                tvClient.Connect(serverEndPointTV);
-            }
             this.consoleName = consoleName;
 
-            if (game == 0)
+            if (game == 0) // Sun and Moon
             {
-                addr_PageSize = 0x32A6A1A4; //How many entries are on the current GTS page
-                addr_PageEndStartRecord = 0x32A6A68C; //This address holds the address to the last block in the entry-block-list
-                addr_PageStartStartRecord = 0x32A6A690; //This address holds the address to the first block in the entry block-list
-                addr_PageCurrentView = 0x305ea384; //Current selected entry in the list
-                addr_PageStartingIndex = 0x32A6A190; //To determine on which page we are, 0 = first page, 100 = second page, etc
-                addr_ListOfAllPageEntries = 0x32A6A7C4; //Startingaddress of all up to 100 trade entries of the current page
+                addr_PageSize = 0x32A6A1A4;
+                addr_PageEndStartRecord = 0x32A6A68C;
+                addr_PageStartStartRecord = 0x32A6A690;
+                addr_PageCurrentView = 0x305ea384;
+                addr_PageStartingIndex = 0x32A6A190;
+                addr_ListOfAllPageEntries = 0x32A6A7C4;
 
-                addr_box1slot1 = 0x330D9838; //To inject the pokemon into box1slot1
+                addr_box1slot1 = 0x330D9838;
 
-                addr_currentScreen = 0x00674802; //Hopefully a address to tell us in what screen we are (roughly)
+                addr_currentScreen = 0x00674802;
 
                 addr_pokemonToFind = 0x32A6A180;
                 addr_pokemonToFindGender = 0x32A6A184;
@@ -201,14 +171,14 @@ namespace Ledybot
 
                 val_PlazaScreen = 0x00;
                 val_Quit_SeekScreen = 0x3F2B;
-                val_SearchScreen = 0x4128; //also in the box during selecting etc
+                val_SearchScreen = 0x4128;
                 val_WhatPkmnScreen = 0x4160;
                 val_GTSListScreen = 0x4180;
                 val_BoxScreen = 0x4120;
-                val_system = 0x41A8; //during error, saving, early sending
-                val_duringTrade = 0x3FD5; //trade is split in several steps, sometimes even 0x00
+                val_system = 0x41A8;
+                val_duringTrade = 0x3FD5;
             }
-            else if (game == 1)
+            else if (game == 1) // Ultra Sun and Moon
             {
                 addr_PageSize = 0x329921A4;
                 addr_PageEndStartRecord = 0x3299268C;
@@ -694,10 +664,7 @@ namespace Ledybot
                                 details.Item6.Add(BitConverter.ToInt32(principal, 0));
                             }
                             Program.f1.AppendListViewItem(szTrainerName, szNickname, country, subregion, Program.PKTable.Species7[dexnumber - 1], szFC, page + "", tradeIndex + "");
-                            if (useLedybotTV)
-                            {
-                                didTradeTV(principal, consoleName, szTrainerName, country, subregion, Program.PKTable.Species7[dexnumber - 1], szFC, page + "", tradeIndex + "");
-                            }
+                         
                             //Inject the Pokemon to box1slot1
                             Program.scriptHelper.write(addr_box1slot1, cloneshort, iPID);
                             //spam a to trade pokemon

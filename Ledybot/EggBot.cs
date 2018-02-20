@@ -15,20 +15,29 @@ namespace Ledybot
 
         private volatile int iPID = 0;
 
-        private uint eggOff = 0x3313EDD8;
+        private uint eggOff;
 
         private bool botstop = false;
 
         public EggBot(int iP, int game)
         {
             iPID = iP;
-            if(game == 0)
+            if(game == 0) // Sun and Moon
             {
                 eggOff = 0x3313EDD8;
             } 
-            else if(game == 1)
+            else if(game == 1) // Ultra Sun and Moon
             {
                 eggOff = 0x3307B1E8;
+            }
+            else if (game == 3) // Omega Rubin and Alpha Sapphire
+            {
+                eggOff = 0x8C88358;
+            }
+            else if (game == 4) // X and Y
+            {
+                eggOff = 0x8C80124;
+
             }
         }
 
