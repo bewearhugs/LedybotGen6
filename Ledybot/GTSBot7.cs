@@ -285,8 +285,12 @@ namespace Ledybot
                         correctScreen = await isCorrectWindow(val_GTSListScreen);
                         if (!correctScreen)
                         {
-                            botState = (int)gtsbotstates.panic;
-                            break;
+                          //Hotfix for Only one Pokemon on List
+                          if (Program.helper.lastRead != 0x40C0)
+                          {
+                          botState = (int)gtsbotstates.panic;
+                          break;
+                          }
                         }
                         //GTS entry list screen, cursor at position 1
                         await Program.helper.waitNTRread(addr_PageSize);
@@ -461,10 +465,13 @@ namespace Ledybot
                         break;
                     case (int)gtsbotstates.findfromend:
                         correctScreen = await isCorrectWindow(val_GTSListScreen);
-                        if (!correctScreen)
                         {
-                            botState = (int)gtsbotstates.panic;
-                            break;
+                          //Hotfix for Only one Pokemon on List
+                          if (Program.helper.lastRead != 0x40C0)
+                          {
+                          botState = (int)gtsbotstates.panic;
+                          break;
+                          }
                         }
                         //also GTS entry list screen, but cursor is at the end of the list in this case
                         await Program.helper.waitNTRread(addr_PageSize);
