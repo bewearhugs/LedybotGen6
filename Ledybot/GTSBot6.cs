@@ -158,7 +158,7 @@ namespace Ledybot
 
             if (game == 3) // Omega Rubin and Alpha Sapphire
             {
-                GTSPageSize = 0x08C69D698;
+                GTSPageSize = 0x08C6D69C;
                 GTSPageIndex = 0x08C6945C;
                 GTSCurrentView = 0x08C6D6AC;
 
