@@ -1,23 +1,12 @@
 # Ledybot
 
 ## About
-Ledybot is a GTS giveaway bot for:
-
-Pokémon: X,
-Pokémon: Y,
-Pokémon: Omega Rubin,
-Pokémon: Alpha Sapphire,
-Pokémon: Sun,
-Pokémon: Moon,
-Pokémon: Ultra Sun,
-Pokémon: Ultra Moon.
-
-Check out LedySync to go along with it, it's really cool: https://github.com/olliz0r/LedySync
+Ledybot is a GTS giveaway bot for pokemon sun and moon. Check out LedySync to go along with it, it's really cool: https://github.com/olliz0r/LedySync
 
 If you are rich and like what you see, feel free to throw me a donation at https://www.paypal.me/olliz0r !
 
 ## Credits
-Huge thanks to EzPz/imaboy321 for rewriting enhancing and maintaining this project for so long!
+Huge thanks to EzPz/imaboy321 for rewriting, enhancing and maintaining this project for so long!
 
 ## Usage
 To get this to run you need a hacked 3DS with CFW. You need NTR (mode 3 version for o3ds) as well as Input Redirection (also mode 3 for o3ds)
