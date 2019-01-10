@@ -108,7 +108,8 @@ namespace Ledybot
                 partyOff = 0x34195E10;
                 eggOff = 0x3313EDD8;
 
-            } else if(log.Contains("momiji")) // Ultra Sun and Moon
+            }
+            else if(log.Contains("momiji")) // Ultra Sun and Moon
             {
                 string splitlog = log.Substring(log.IndexOf(", pname:   momiji") - 8, log.Length - log.IndexOf(", pname:   momiji"));
                 pid = Convert.ToInt32("0x" + splitlog.Substring(0, 8), 16);
@@ -316,7 +317,7 @@ namespace Ledybot
                         MessageBox.Show("Bot stopped by user.", "GTS Bot", MessageBoxButtons.OK, MessageBoxIcon.Information);
                         break;
                     default:
-                        MessageBox.Show("An error has occurred.", "GTS Bot", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        GTSBot6.SurviveAsync();
                         break;
                 }
                 Program.gd.enableButtons();
