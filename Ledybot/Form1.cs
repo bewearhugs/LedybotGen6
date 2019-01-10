@@ -317,7 +317,7 @@ namespace Ledybot
                         MessageBox.Show("Bot stopped by user.", "GTS Bot", MessageBoxButtons.OK, MessageBoxIcon.Information);
                         break;
                     default:
-                        GTSBot6.SurviveAsync();
+                       await GTSBot6.RunBot();
                         break;
                 }
                 Program.gd.enableButtons();
