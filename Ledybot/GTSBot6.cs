@@ -136,7 +136,7 @@ namespace Ledybot
             }
         }
 
-        public GTSBot6(int iP, int iPtF, int iPtFGender, int iPtFLevel, bool bBlacklist, bool bReddit, int iSearchDirection, string waittime, string consoleName, bool useLedySync, string ledySyncIp, string ledySyncPort, int game,string szIP)
+        public GTSBot6(int iP, int iPtF, int iPtFGender, int iPtFLevel, bool bBlacklist, bool bReddit, int iSearchDirection, string waittime, string consoleName, bool useLedySync, string ledySyncIp, string ledySyncPort, int game, string szIP)
         {
             this.iPokemonToFind = iPtF;
             this.iPokemonToFindGender = iPtFGender;
@@ -181,9 +181,6 @@ namespace Ledybot
 
                 GTSListBlock = 0x8C61EDC;
                 GTSBlockEntrySize = 0xA0;
-                //GTSBlockStart = 0x8C6656C;
-                //GTSBlockEnd = 0x8C66568;
-                //GTSBlockAll = 0x8C666A0;
 
                 BoxInject = 0x8C861C8;
 
@@ -230,7 +227,8 @@ namespace Ledybot
                             break;
 
                         case (int)gtsbotstates.startsearch:
-                            //Write wanted Pokemon, Level, Gender to Ram, won't Display it but works. ¯\_(ツ)_/¯
+
+                            //Write wanted Pokemon, Level, Gender to Ram, won't Display it but works.
                             Program.f1.ChangeStatus("Setting Pokemon to find");
                             waitTaskbool = Program.helper.waitNTRwrite(PokemonToFind, pokemonIndex, iPID);
                             waitTaskbool = Program.helper.waitNTRwrite(PokemonToFindGender, pokemonGender, iPID);
@@ -244,7 +242,7 @@ namespace Ledybot
 
                             if (searchDirection == SEARCHDIRECTION_FROMBACK)
                             {
-                                //This is the only Solution i found so far to change the PageIndex, write Value while Loading the Frame.
+                                //Write Index while Loading the Frame.
                                 await Task.Delay(1000);
                                 await Program.helper.waitNTRwrite(GTSPageIndex, (uint)startIndex, iPID);
                             }
@@ -255,13 +253,13 @@ namespace Ledybot
 
                         case (int)gtsbotstates.findPokemon:
 
-                             await Program.helper.waitNTRread(BoxScreen);
-                                if (Program.helper.lastRead.ToString() == "65794")
-                                {
-                                   botState = (int)gtsbotstates.panic;
-                                    break;
-                                }
-                            
+                            await Program.helper.waitNTRread(BoxScreen);
+                            if (Program.helper.lastRead.ToString() == "65794")
+                            {
+                                botState = (int)gtsbotstates.panic;
+                                break;
+                            }
+
 
 
                             await Program.helper.waitNTRread(GTSPageSize);
@@ -283,7 +281,7 @@ namespace Ledybot
                                     await Program.helper.waitNTRread(GTSPageSize);
                                     Entries = (Program.helper.lastRead - 1);
 
-                                    if (Entries < 99 || startIndex >= 500) // Hardcoded to 5 Pages
+                                    if (Entries < 99)
                                     {
                                         foundLastPage = true;
                                         CurrentView = Entries;
@@ -309,15 +307,16 @@ namespace Ledybot
                                 iDirection = 1;
                             }
 
-                            //There's no Address for ALL Page Entries, so it takes alot longer to find a Pokemon. (2min from Entry 100-1)
 
-                            for (int i = iStartIndex; i * iDirection < iEndIndex; i += iDirection)
+                            // Reading all Entries on Current Page
+                            waitTaskbool = Program.helper.waitNTRread(GTSListBlock, (uint)(256 * 100));
+                            if (await waitTaskbool)
                             {
-                                //Get the Current Entry Data
-                                waitTaskbool = Program.helper.waitNTRread(GTSListBlock + (CurrentView * GTSBlockEntrySize), (uint)(256 * 100));
-                                if (await waitTaskbool)
+                                for (int i = iStartIndex; i * iDirection < iEndIndex; i += iDirection)
                                 {
-                                    block = Program.helper.lastArray;
+                                    //Get the Current Entry Data
+                                    Array.Copy(Program.helper.lastArray, (GTSBlockEntrySize * i) - Program.helper.lastRead, block, 0, 256);
+
                                     //Collect Data
                                     int gender = block[0x2];
                                     int level = block[0x3];
@@ -326,7 +325,7 @@ namespace Ledybot
                                     // int Item = BitConverter.ToInt16(block, 0x22);
                                     szNickname = Encoding.Unicode.GetString(block, 0x08, 24).Trim('\0');
                                     szTrainerName = Encoding.Unicode.GetString(block, 0x40, 24).Trim('\0');
-                                    // Phrase = Encoding.Unicode.GetString(block, 0x5A, 30).Trim('\0');
+                                    Phrase = Encoding.Unicode.GetString(block, 0x5A, 30).Trim('\0');
                                     //int countryIndex = BitConverter.ToInt16(block, 0x48);
                                     country = "-"; // No valid Country Array found :/
                                                    //Program.f1.countries.TryGetValue(countryIndex, out country);
@@ -341,7 +340,6 @@ namespace Ledybot
                                     friendcode[4] = check;
                                     long i_FC = BitConverter.ToInt64(friendcode, 0);
                                     szFC = i_FC.ToString().PadLeft(12, '0');
-
                                     if (Program.f1.giveawayDetails.ContainsKey(dex))
                                     {
                                         Program.f1.giveawayDetails.TryGetValue(dex, out details);
@@ -349,51 +347,27 @@ namespace Ledybot
                                         if ((gender == 0 || gender == details.Item3) && (level == 0 || level == details.Item4))
                                         {
 
-                                            if (useLedySync && !Program.f1.banlist.Contains(szFC) && canThisTrade(principal, consoleName, szTrainerName, country, subregion, Program.PKTable.Species7[dex - 1], szFC, PageIndex + "", (i - 1) + ""))
+                                            if (useLedySync && !Program.f1.banlist.Contains(szFC) && canThisTrade(principal, consoleName, szTrainerName, country, subregion, Program.PKTable.Species6[dex - 1], szFC, PageIndex + "", (i - 1) + ""))
                                             {
-                                                //Check if Pokemon is from Gen7
                                                 szPath = details.Item1;
-                                                PKHeX dump = new PKHeX();
-                                                dump.Data = PKHeX.decryptArray(System.IO.File.ReadAllBytes(szPath));
-                                                if (dex < 721 || dump.Version < 29)
-                                                {
-                                                    PokemonFound = true;
-                                                    Program.f1.ChangeStatus("Found a pokemon to trade");
-                                                    botState = (int)gtsbotstates.trade;
-                                                    break;
-                                                }
-                                                else
-                                                {
-                                                    Program.f1.ChangeStatus("Looking for a Pokemon to Trade, Current Entry: " + (CurrentView) + "/" + (Entries));
-                                                    CurrentView--;
-                                                }
+                                                PokemonFound = true;
+                                                Program.f1.ChangeStatus("Found a pokemon to trade");
+                                                botState = (int)gtsbotstates.trade;
+                                                break;
+
+
                                             }
                                             else if (!useLedySync)
                                             {
                                                 if ((!bReddit || Program.f1.commented.Contains(szFC)) && !details.Item6.Contains(BitConverter.ToInt32(principal, 0)) && !Program.f1.banlist.Contains(szFC))
                                                 {
                                                     szPath = details.Item1;
-                                                    //Check if Pokemon is from Gen7
-                                                    szPath = details.Item1;
-                                                    PKHeX dump = new PKHeX();
-                                                    dump.Data = PKHeX.decryptArray(System.IO.File.ReadAllBytes(szPath));
-                                                    if (dex < 721 || dump.Version < 29)
-                                                    {
-                                                        PokemonFound = true;
-                                                        botState = (int)gtsbotstates.trade;
-                                                        break;
-                                                    }
-                                                    else
-                                                    {
-                                                        Program.f1.ChangeStatus("Looking for a Pokemon to Trade, Current Entry: " + (CurrentView) + "/" + (Entries));
-                                                        CurrentView--;
-                                                    }
+                                                    PokemonFound = true;
+                                                    botState = (int)gtsbotstates.trade;
+                                                    break;
+
                                                 }
                                             }
-                                        }
-                                        {
-                                            Program.f1.ChangeStatus("Looking for a Pokemon to Trade, Current Entry: " + (CurrentView) + "/" + (Entries));
-                                            CurrentView--;
                                         }
                                     }
                                     else
@@ -426,7 +400,6 @@ namespace Ledybot
                             PageIndex = (Program.helper.lastRead + 1);
                             Program.f1.AppendListViewItem(szTrainerName, szNickname, country, subregion, Program.PKTable.Species6[dex - 1], szFC, (PageIndex / 100).ToString(), CurrentView.ToString());
 
-                            //Ghetto Solution \o/
                             //Enter current viewed Entry, write wanted current view to RAM, quit current viewed Entry
                             Program.helper.quickbuton(Program.PKTable.keyA, 200);
                             await Task.Delay(2200);
@@ -447,6 +420,30 @@ namespace Ledybot
                             Program.f1.ChangeStatus("Trading pokemon on page " + (PageIndex / 100).ToString() + " index " + CurrentView.ToString() + "");
                             await Task.Delay(10000);
 
+                            if (details.Item5 > 0)
+                            {
+                                Program.f1.giveawayDetails[dex] = new Tuple<string, string, int, int, int, ArrayList>(details.Item1, details.Item2, details.Item3, details.Item4, details.Item5 - 1, details.Item6);
+                                foreach (System.Data.DataRow row in Program.gd.details.Rows)
+                                {
+                                    if (row[0].ToString() == dex.ToString())
+                                    {
+                                        int count = int.Parse(row[5].ToString()) - 1;
+                                        row[5] = count;
+                                        break;
+                                    }
+                                }
+                            }
+
+                            foreach (System.Data.DataRow row in Program.gd.details.Rows)
+                            {
+                                if (row[0].ToString() == dex.ToString())
+                                {
+                                    int amount = int.Parse(row[6].ToString()) + 1;
+                                    row[6] = amount;
+                                    break;
+                                }
+                            }
+
                             //In Case the Pokemon is already traded, go back to Seek/Deposit Screen
                             Program.helper.quickbuton(Program.PKTable.keyB, 250);
                             await Task.Delay(1000);
@@ -455,7 +452,37 @@ namespace Ledybot
                             // wait if trade is finished
                             await Task.Delay(35000);
                             PokemonFound = true;
-                            startIndex = 100;
+                            bool cont = false;
+
+                            foreach (KeyValuePair<int, Tuple<string, string, int, int, int, ArrayList>> pair in Program.f1.giveawayDetails)
+                            {
+                                if (pair.Value.Item5 != 0)
+                                {
+                                    cont = true;
+                                    break;
+                                }
+                            }
+                            if (!cont)
+                            {
+                                botresult = 1;
+                                botState = (int)gtsbotstates.botexit;
+                                break;
+                            }
+
+                            startIndex = 0;
+                            tradeIndex = -1;
+                            listlength = 0;
+                            addr_PageEntry = 0;
+                            foundLastPage = false;
+
+                            if (bReddit)
+                            {
+                                botState = (int)gtsbotstates.updatecomments;
+                            }
+                            else
+                            {
+                                botState = (int)gtsbotstates.research;
+                            }
                             botState = (int)gtsbotstates.botstart;
                             break;
 
@@ -488,7 +515,7 @@ namespace Ledybot
                                 Program.helper.quickbuton(Program.PKTable.keyB, commandtime + 200);
                                 await Task.Delay(2000);
                             }
-                           
+
 
                             Program.helper.quicktouch(170, 2, 200);
                             Program.helper.quicktouch(100, 50, 200);
