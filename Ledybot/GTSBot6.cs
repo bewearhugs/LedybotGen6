@@ -268,6 +268,7 @@ namespace Ledybot
 
                             if (searchDirection == SEARCHDIRECTION_FROMBACK)
                             {
+                                int PageMoveAttemps = 0;
                                 // Change current Page, everytime + 100
                                 while (!foundLastPage)
                                 {
@@ -285,6 +286,16 @@ namespace Ledybot
                                     {
                                         foundLastPage = true;
                                         CurrentView = Entries;
+                                    }
+
+                                    if (PageMoveAttemps >= 10)
+                                    {
+                                        // Frame writen to low, return
+                                        Program.helper.quickbuton(Program.PKTable.keyB, commandtime);
+                                        await Task.Delay(commandtime + delaytime + 1000);
+                                        Program.helper.quickbuton(Program.PKTable.keyB, commandtime);
+                                        await Task.Delay(commandtime + delaytime + 1000);
+                                        botState = (int)gtsbotstates.pressSeek;
                                     }
                                 }
                             }
@@ -352,10 +363,9 @@ namespace Ledybot
                                                 szPath = details.Item1;
                                                 PokemonFound = true;
                                                 Program.f1.ChangeStatus("Found a pokemon to trade");
+                                                tradeIndex = i - 1;
                                                 botState = (int)gtsbotstates.trade;
                                                 break;
-
-
                                             }
                                             else if (!useLedySync)
                                             {
@@ -363,21 +373,40 @@ namespace Ledybot
                                                 {
                                                     szPath = details.Item1;
                                                     PokemonFound = true;
+                                                    Program.f1.ChangeStatus("Found a pokemon to trade");
+                                                    tradeIndex = i - 1;
                                                     botState = (int)gtsbotstates.trade;
                                                     break;
-
                                                 }
                                             }
                                         }
                                     }
-                                    else
+
+
+                                    if (searchDirection == SEARCHDIRECTION_FROMBACK && startIndex > 100 && i * iDirection < iEndIndex)
                                     {
-                                        Program.f1.ChangeStatus("Looking for a Pokemon to Trade, Current Entry: " + (CurrentView) + "/" + (Entries));
-                                        CurrentView--;
+                                        Program.f1.ChangeStatus("No pokemon to trade on this page, try previous page");
+                                        Program.helper.quickbuton(Program.PKTable.DpadLEFT, commandtime);
+                                        await Task.Delay(commandtime + delaytime + 1000);
+                                        startIndex -= 200;
+                                        await Program.helper.waitNTRwrite(GTSPageIndex, (uint)startIndex, iPID);
+                                        await Task.Delay(commandtime + delaytime + 1000);
+                                        Program.helper.quickbuton(Program.PKTable.DpadRIGHT, commandtime);
+                                        await Task.Delay(commandtime + delaytime + 1000);
+                                        await Program.helper.waitNTRread(GTSPageSize);
+                                        i = (int)Program.helper.lastRead;
+
                                     }
+
                                 }
 
+
                             }
+
+
+
+
+
                             // No Pokemon found, return to Seek/Deposit Screen
                             if (!PokemonFound)
                             {
