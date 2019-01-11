@@ -253,17 +253,9 @@ namespace Ledybot
 
                         case (int)gtsbotstates.findPokemon:
 
-                            await Program.helper.waitNTRread(BoxScreen);
-                            if (Program.helper.lastRead.ToString() == "65794")
-                            {
-                                botState = (int)gtsbotstates.panic;
-                                break;
-                            }
-
-
 
                             await Program.helper.waitNTRread(GTSPageSize);
-                            uint Entries = (Program.helper.lastRead - 1);
+                            uint Entries = (Program.helper.lastRead);
                             CurrentView = Entries;
 
                             if (searchDirection == SEARCHDIRECTION_FROMBACK)
@@ -280,7 +272,7 @@ namespace Ledybot
                                     Program.helper.quickbuton(Program.PKTable.DpadRIGHT, commandtime);
                                     await Task.Delay(commandtime + delaytime + 1000);
                                     await Program.helper.waitNTRread(GTSPageSize);
-                                    Entries = (Program.helper.lastRead - 1);
+                                    Entries = (Program.helper.lastRead );
 
                                     if (Entries < 99)
                                     {
@@ -328,7 +320,6 @@ namespace Ledybot
                                     //Get the Current Entry Data
                                     Array.Copy(Program.helper.lastArray, (GTSBlockEntrySize * i) - Program.helper.lastRead, block, 0, 256);
 
-                                  
                                     //Collect Data
                                     int gender = block[0x2];
                                     int level = block[0x3];
@@ -362,8 +353,8 @@ namespace Ledybot
                                             {
                                                 szPath = details.Item1;
                                                 PokemonFound = true;
+                                                CurrentView = (uint)i;
                                                 Program.f1.ChangeStatus("Found a pokemon to trade");
-                                                tradeIndex = i - 1;
                                                 botState = (int)gtsbotstates.trade;
                                                 break;
                                             }
@@ -373,8 +364,8 @@ namespace Ledybot
                                                 {
                                                     szPath = details.Item1;
                                                     PokemonFound = true;
+                                                    CurrentView = (uint)i;
                                                     Program.f1.ChangeStatus("Found a pokemon to trade");
-                                                    tradeIndex = i - 1;
                                                     botState = (int)gtsbotstates.trade;
                                                     break;
                                                 }
@@ -402,10 +393,6 @@ namespace Ledybot
 
 
                             }
-
-
-
-
 
                             // No Pokemon found, return to Seek/Deposit Screen
                             if (!PokemonFound)
