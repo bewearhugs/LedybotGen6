@@ -1,6 +1,6 @@
 # Ledybot
 
-https://github.com/Mitsukiii Repo
+yet another Repo
 
 Currently working on Gen6 GTS Bot, not stable rn but usable.
 
