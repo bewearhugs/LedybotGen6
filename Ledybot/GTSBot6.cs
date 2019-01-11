@@ -290,7 +290,7 @@ namespace Ledybot
                             }
 
                             Program.f1.ChangeStatus("Looking for a Pokemon to Trade");
-
+                            if (Entries > 100) { Entries = 1; }
                             // Check the Trade Direction Back to Front or Front to Back
                             if (searchDirection == SEARCHDIRECTION_FROMBACK || searchDirection == SEARCHDIRECTION_FROMBACKFIRSTPAGEONLY)
                             {
@@ -505,10 +505,7 @@ namespace Ledybot
                             }
                             Program.f1.ChangeStatus("Recovery Mode");
 
-                            //In case of a Communication Error
-                            Program.helper.quickbuton(Program.PKTable.keyA, 250);
-                            await Task.Delay(5000);
-
+                           
                             // Spam B to get out of GTS
                             for (int i = 0; i < 15; i++)
                             {
