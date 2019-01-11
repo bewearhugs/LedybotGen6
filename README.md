@@ -1,5 +1,9 @@
 # Ledybot
 
+yet another Repo
+
+Currently working on Gen6 GTS Bot, not stable rn but usable.
+
 ## About
 Ledybot is a GTS giveaway bot for Gen6 & Gen7 Pokémon Games . Check out LedySync to go along with it, it's really cool: https://github.com/olliz0r/LedySync
 
