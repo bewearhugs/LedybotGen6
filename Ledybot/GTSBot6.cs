@@ -317,6 +317,7 @@ namespace Ledybot
                                     //Get the Current Entry Data
                                     Array.Copy(Program.helper.lastArray, (GTSBlockEntrySize * i) - Program.helper.lastRead, block, 0, 256);
 
+                                  
                                     //Collect Data
                                     int gender = block[0x2];
                                     int level = block[0x3];
@@ -326,13 +327,11 @@ namespace Ledybot
                                     szNickname = Encoding.Unicode.GetString(block, 0x08, 24).Trim('\0');
                                     szTrainerName = Encoding.Unicode.GetString(block, 0x40, 24).Trim('\0');
                                     Phrase = Encoding.Unicode.GetString(block, 0x5A, 30).Trim('\0');
-                                    //int countryIndex = BitConverter.ToInt16(block, 0x48);
-                                    country = "-"; // No valid Country Array found :/
-                                                   //Program.f1.countries.TryGetValue(countryIndex, out country);
-                                                   //Program.f1.getSubRegions(countryIndex);
-                                                   //int subRegionIndex = BitConverter.ToInt16(block, 0x236);
-                                    subregion = "-"; // No valid Sub Region Array found :/
-                                                     //Program.f1.regions.TryGetValue(subRegionIndex, out subregion);
+                                    int countryIndex = BitConverter.ToInt16(block, 0x30);
+                                    Program.f1.countries.TryGetValue(countryIndex, out country);
+                                    Program.f1.getSubRegions(countryIndex);
+                                    int subRegionIndex = BitConverter.ToInt16(block, 0x30);
+                                    Program.f1.regions.TryGetValue(subRegionIndex, out subregion);
                                     Array.Copy(block, 0x3C, principal, 0, 4);
                                     byte check = Program.f1.calculateChecksum(principal);
                                     byte[] friendcode = new byte[8];
@@ -340,6 +339,7 @@ namespace Ledybot
                                     friendcode[4] = check;
                                     long i_FC = BitConverter.ToInt64(friendcode, 0);
                                     szFC = i_FC.ToString().PadLeft(12, '0');
+
                                     if (Program.f1.giveawayDetails.ContainsKey(dex))
                                     {
                                         Program.f1.giveawayDetails.TryGetValue(dex, out details);
