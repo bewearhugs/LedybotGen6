@@ -253,26 +253,26 @@ namespace Ledybot
 
                         case (int)gtsbotstates.findPokemon:
 
-
                             await Program.helper.waitNTRread(GTSPageSize);
                             uint Entries = (Program.helper.lastRead);
                             CurrentView = Entries;
 
-                            if (searchDirection == SEARCHDIRECTION_FROMBACK)
+                            if (Entries == 100 && !foundLastPage && searchDirection == SEARCHDIRECTION_FROMBACK)
                             {
+                                Program.f1.ChangeStatus("Moving to last page");
+
                                 int PageMoveAttemps = 0;
                                 // Change current Page, everytime + 100
                                 while (!foundLastPage)
                                 {
                                     startIndex += 100;
                                     await Program.helper.waitNTRwrite(GTSPageIndex, (uint)startIndex, iPID);
-                                    Program.f1.ChangeStatus("Moving to last page");
                                     Program.helper.quickbuton(Program.PKTable.DpadLEFT, commandtime);
                                     await Task.Delay(commandtime + delaytime + 1000);
                                     Program.helper.quickbuton(Program.PKTable.DpadRIGHT, commandtime);
                                     await Task.Delay(commandtime + delaytime + 1000);
                                     await Program.helper.waitNTRread(GTSPageSize);
-                                    Entries = (Program.helper.lastRead );
+                                    Entries = Program.helper.lastRead;
 
                                     if (Entries < 99)
                                     {
@@ -289,11 +289,14 @@ namespace Ledybot
                                         await Task.Delay(commandtime + delaytime + 1000);
                                         botState = (int)gtsbotstates.pressSeek;
                                     }
+                                    PageMoveAttemps++;
                                 }
                             }
 
                             Program.f1.ChangeStatus("Looking for a Pokemon to Trade");
-                            if (Entries > 100) { Entries = 1; }
+
+                            if (Entries > 100) { Entries = 1; } // Workaroung for only 1 Entry on List
+
                             // Check the Trade Direction Back to Front or Front to Back
                             if (searchDirection == SEARCHDIRECTION_FROMBACK || searchDirection == SEARCHDIRECTION_FROMBACKFIRSTPAGEONLY)
                             {
@@ -321,37 +324,49 @@ namespace Ledybot
                                     Array.Copy(Program.helper.lastArray, (GTSBlockEntrySize * i) - Program.helper.lastRead, block, 0, 256);
 
                                     //Collect Data
-                                    int gender = block[0x2];
-                                    int level = block[0x3];
-                                    // int dlevel = block[0x7];
-                                    dex = BitConverter.ToInt16(block, 0x0);
-                                    // int Item = BitConverter.ToInt16(block, 0x22);
-                                    szNickname = Encoding.Unicode.GetString(block, 0x08, 24).Trim('\0');
-                                    szTrainerName = Encoding.Unicode.GetString(block, 0x40, 24).Trim('\0');
-                                    Phrase = Encoding.Unicode.GetString(block, 0x5A, 30).Trim('\0');
-                                    int countryIndex = BitConverter.ToInt16(block, 0x30);
-                                    Program.f1.countries.TryGetValue(countryIndex, out country);
-                                    Program.f1.getSubRegions(countryIndex);
-                                    int subRegionIndex = BitConverter.ToInt16(block, 0x30);
-                                    Program.f1.regions.TryGetValue(subRegionIndex, out subregion);
-                                    Array.Copy(block, 0x3C, principal, 0, 4);
-                                    byte check = Program.f1.calculateChecksum(principal);
-                                    byte[] friendcode = new byte[8];
-                                    Array.Copy(principal, 0, friendcode, 0, 4);
-                                    friendcode[4] = check;
-                                    long i_FC = BitConverter.ToInt64(friendcode, 0);
-                                    szFC = i_FC.ToString().PadLeft(12, '0');
+                                    dex = BitConverter.ToInt16(block, 0x0);  
 
                                     if (Program.f1.giveawayDetails.ContainsKey(dex))
                                     {
                                         Program.f1.giveawayDetails.TryGetValue(dex, out details);
 
+                                        if (details.Item1 == "")
+                                        {
+                                            string szNickname = Encoding.Unicode.GetString(block, 0x08, 24).Trim('\0'); //fix to prevent nickname clipping. Count should be 24, 2 bytes per letter, 2x12=24, not 20.
+                                            string szFileToFind = details.Item2 + szNickname + ".pk7";
+                                            if (!File.Exists(szFileToFind))
+                                            {
+                                                continue;
+                                            }
+                                        }
+                                        Array.Copy(block, 0x3C, principal, 0, 4);
+                                        byte check = Program.f1.calculateChecksum(principal);
+                                        byte[] friendcode = new byte[8];
+                                        Array.Copy(principal, 0, friendcode, 0, 4);
+                                        friendcode[4] = check;
+                                        long i_FC = BitConverter.ToInt64(friendcode, 0);
+                                        szFC = i_FC.ToString().PadLeft(12, '0');
+
+                                        int gender = block[0x2];
+                                        int level = block[0x3];
+
+
                                         if ((gender == 0 || gender == details.Item3) && (level == 0 || level == details.Item4))
                                         {
 
+                                            szTrainerName = Encoding.Unicode.GetString(block, 0x40, 24).Trim('\0');
+                                            //Phrase = Encoding.Unicode.GetString(block, 0x5A, 30).Trim('\0');
+                                            int countryIndex = BitConverter.ToInt16(block, 0x30);
+                                            string country = "-";
+                                            Program.f1.countries.TryGetValue(countryIndex, out country);
+                                            Program.f1.getSubRegions(countryIndex);
+                                            int subRegionIndex = BitConverter.ToInt16(block, 0x30);
+                                            string subregion = "-";
+                                            Program.f1.regions.TryGetValue(subRegionIndex, out subregion);
+
+
                                             if (useLedySync && !Program.f1.banlist.Contains(szFC) && canThisTrade(principal, consoleName, szTrainerName, country, subregion, Program.PKTable.Species6[dex - 1], szFC, PageIndex + "", (i - 1) + ""))
                                             {
-                                                szPath = details.Item1;
                                                 PokemonFound = true;
                                                 CurrentView = (uint)i;
                                                 Program.f1.ChangeStatus("Found a pokemon to trade");
@@ -362,7 +377,6 @@ namespace Ledybot
                                             {
                                                 if ((!bReddit || Program.f1.commented.Contains(szFC)) && !details.Item6.Contains(BitConverter.ToInt32(principal, 0)) && !Program.f1.banlist.Contains(szFC))
                                                 {
-                                                    szPath = details.Item1;
                                                     PokemonFound = true;
                                                     CurrentView = (uint)i;
                                                     Program.f1.ChangeStatus("Found a pokemon to trade");
@@ -404,102 +418,131 @@ namespace Ledybot
                             break;
 
                         case (int)gtsbotstates.trade:
-                            // Trade Process
                             Program.f1.ChangeStatus("Found a pokemon to trade");
-                            //Inject Pokemon to Box1 Slot1
-                            byte[] pkmEncrypted = System.IO.File.ReadAllBytes(szPath);
-                            byte[] cloneshort = PKHeX.encryptArray(pkmEncrypted.Take(232).ToArray());
-                            string ek7 = BitConverter.ToString(cloneshort).Replace("-", ", 0x");
-                            Program.scriptHelper.write(BoxInject, cloneshort, iPID);
 
-                            await Program.helper.waitNTRread(GTSPageIndex);
-                            PageIndex = (Program.helper.lastRead + 1);
-                            Program.f1.AppendListViewItem(szTrainerName, szNickname, country, subregion, Program.PKTable.Species6[dex - 1], szFC, (PageIndex / 100).ToString(), CurrentView.ToString());
-
-                            //Enter current viewed Entry, write wanted current view to RAM, quit current viewed Entry
-                            Program.helper.quickbuton(Program.PKTable.keyA, 200);
-                            await Task.Delay(2200);
-                            await Program.helper.waitNTRwrite(GTSCurrentView, (uint)CurrentView, iPID);
-                            Program.helper.quickbuton(Program.PKTable.keyB, 200);
-                            await Task.Delay(500);
-                            Program.helper.quickbuton(Program.PKTable.keyB, 200);
-                            await Task.Delay(2000);
-                            Program.helper.quickbuton(Program.PKTable.keyA, 200);
-                            await Task.Delay(3000);
-
-                            //Now we have the right Entry, enter current viewed Entry
-                            Program.helper.quickbuton(Program.PKTable.keyA, 200);
-                            await Task.Delay(500);
-                            Program.helper.quickbuton(Program.PKTable.keyA, 200);
-                            await Task.Delay(500);
-                            Program.helper.quickbuton(Program.PKTable.keyA, 200);
-                            Program.f1.ChangeStatus("Trading pokemon on page " + (PageIndex / 100).ToString() + " index " + CurrentView.ToString() + "");
-                            await Task.Delay(10000);
-
-                            if (details.Item5 > 0)
+                            waitTaskbool = Program.helper.waitNTRread(GTSPageIndex);
+                            if (await waitTaskbool)
                             {
-                                Program.f1.giveawayDetails[dex] = new Tuple<string, string, int, int, int, ArrayList>(details.Item1, details.Item2, details.Item3, details.Item4, details.Item5 - 1, details.Item6);
+
+                                string szNickname = Encoding.Unicode.GetString(block, 0x14, 24).Trim('\0'); //fix to prevent nickname clipping. Count should be 24, 2 bytes per letter, 2x12=24, not 20.
+
+
+                                string szPath = details.Item1;
+                                string szFileToFind = details.Item2 + szNickname + ".pk7";
+                                if (File.Exists(szFileToFind))
+                                {
+                                    szPath = szFileToFind;
+                                }
+
+                                string szTrainerName = Encoding.Unicode.GetString(block, 0x40, 24).Trim('\0');
+                                //Phrase = Encoding.Unicode.GetString(block, 0x5A, 30).Trim('\0');
+                                int countryIndex = BitConverter.ToInt16(block, 0x30);
+                                string country = "-";
+                                Program.f1.countries.TryGetValue(countryIndex, out country);
+                                Program.f1.getSubRegions(countryIndex);
+                                int subRegionIndex = BitConverter.ToInt16(block, 0x30);
+                                string subregion = "-";
+                                Program.f1.regions.TryGetValue(subRegionIndex, out subregion);
+
+                                if (bBlacklist)
+                                {
+                                    details.Item6.Add(BitConverter.ToInt32(principal, 0));
+                                }
+
+                                //Inject Pokemon to Box1 Slot1
+                                byte[] pkmEncrypted = System.IO.File.ReadAllBytes(szPath);
+                                byte[] cloneshort = PKHeX.encryptArray(pkmEncrypted.Take(232).ToArray());
+                                string ek7 = BitConverter.ToString(cloneshort).Replace("-", ", 0x");
+                                Program.scriptHelper.write(BoxInject, cloneshort, iPID);
+
+                                await Program.helper.waitNTRread(GTSPageIndex);
+                                PageIndex = (Program.helper.lastRead + 1);
+
+
+                                Program.f1.AppendListViewItem(szTrainerName, szNickname, country, subregion, Program.PKTable.Species6[dex - 1], szFC, (PageIndex / 100).ToString(), CurrentView.ToString());
+
+                                //Enter current viewed Entry, write wanted current view to RAM, quit current viewed Entry
+                                Program.helper.quickbuton(Program.PKTable.keyA, 200);
+                                await Task.Delay(2200);
+                                await Program.helper.waitNTRwrite(GTSCurrentView, (uint)CurrentView, iPID);
+                                Program.helper.quickbuton(Program.PKTable.keyB, 200);
+                                await Task.Delay(500);
+                                Program.helper.quickbuton(Program.PKTable.keyB, 200);
+                                await Task.Delay(2000);
+                                Program.helper.quickbuton(Program.PKTable.keyA, 200);
+                                await Task.Delay(3000);
+
+                                //Now we have the right Entry, enter current viewed Entry
+                                Program.helper.quickbuton(Program.PKTable.keyA, 200);
+                                await Task.Delay(500);
+                                Program.helper.quickbuton(Program.PKTable.keyA, 200);
+                                await Task.Delay(500);
+                                Program.helper.quickbuton(Program.PKTable.keyA, 200);
+                                Program.f1.ChangeStatus("Trading pokemon on page " + (PageIndex / 100).ToString() + " index " + CurrentView.ToString() + "");
+                                await Task.Delay(10000);
+
+                                if (details.Item5 > 0)
+                                {
+                                    Program.f1.giveawayDetails[dex] = new Tuple<string, string, int, int, int, ArrayList>(details.Item1, details.Item2, details.Item3, details.Item4, details.Item5 - 1, details.Item6);
+                                    foreach (System.Data.DataRow row in Program.gd.details.Rows)
+                                    {
+                                        if (row[0].ToString() == dex.ToString())
+                                        {
+                                            int count = int.Parse(row[5].ToString()) - 1;
+                                            row[5] = count;
+                                            break;
+                                        }
+                                    }
+                                }
+
                                 foreach (System.Data.DataRow row in Program.gd.details.Rows)
                                 {
                                     if (row[0].ToString() == dex.ToString())
                                     {
-                                        int count = int.Parse(row[5].ToString()) - 1;
-                                        row[5] = count;
+                                        int amount = int.Parse(row[6].ToString()) + 1;
+                                        row[6] = amount;
                                         break;
                                     }
                                 }
-                            }
 
-                            foreach (System.Data.DataRow row in Program.gd.details.Rows)
-                            {
-                                if (row[0].ToString() == dex.ToString())
+                                //In Case the Pokemon is already traded, go back to Seek/Deposit Screen
+                                Program.helper.quickbuton(Program.PKTable.keyB, 250);
+                                await Task.Delay(1000);
+                                Program.helper.quickbuton(Program.PKTable.keyB, 250);
+                                await Task.Delay(1000);
+                                // wait if trade is finished
+                                await Task.Delay(35000);
+                                PokemonFound = true;
+                                bool cont = false;
+
+                                foreach (KeyValuePair<int, Tuple<string, string, int, int, int, ArrayList>> pair in Program.f1.giveawayDetails)
                                 {
-                                    int amount = int.Parse(row[6].ToString()) + 1;
-                                    row[6] = amount;
+                                    if (pair.Value.Item5 != 0)
+                                    {
+                                        cont = true;
+                                        break;
+                                    }
+                                }
+                                if (!cont)
+                                {
+                                    botresult = 1;
+                                    botState = (int)gtsbotstates.botexit;
                                     break;
                                 }
-                            }
 
-                            //In Case the Pokemon is already traded, go back to Seek/Deposit Screen
-                            Program.helper.quickbuton(Program.PKTable.keyB, 250);
-                            await Task.Delay(1000);
-                            Program.helper.quickbuton(Program.PKTable.keyB, 250);
-                            await Task.Delay(1000);
-                            // wait if trade is finished
-                            await Task.Delay(35000);
-                            PokemonFound = true;
-                            bool cont = false;
+                                startIndex = 0;
+                                listlength = 0;
+                                foundLastPage = false;
 
-                            foreach (KeyValuePair<int, Tuple<string, string, int, int, int, ArrayList>> pair in Program.f1.giveawayDetails)
-                            {
-                                if (pair.Value.Item5 != 0)
+                                if (bReddit)
                                 {
-                                    cont = true;
-                                    break;
+                                    botState = (int)gtsbotstates.updatecomments;
+                                }
+                                else
+                                {
+                                    botState = (int)gtsbotstates.research;
                                 }
                             }
-                            if (!cont)
-                            {
-                                botresult = 1;
-                                botState = (int)gtsbotstates.botexit;
-                                break;
-                            }
-
-                            startIndex = 0;
-                            tradeIndex = -1;
-                            listlength = 0;
-                            addr_PageEntry = 0;
-                            foundLastPage = false;
-
-                            if (bReddit)
-                            {
-                                botState = (int)gtsbotstates.updatecomments;
-                            }
-                            else
-                            {
-                                botState = (int)gtsbotstates.research;
-                            }
-                            botState = (int)gtsbotstates.botstart;
                             break;
 
                         case (int)gtsbotstates.research:
