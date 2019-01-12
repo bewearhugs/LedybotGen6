@@ -221,6 +221,7 @@ namespace Ledybot
                             break;
 
                         case (int)gtsbotstates.pressSeek:
+                            Program.f1.ChangeStatus("Pressing seek button");
                             await Program.helper.waitbutton(Program.PKTable.keyA);
                             await Task.Delay(1000);
                             botState = (int)gtsbotstates.startsearch;
@@ -237,7 +238,7 @@ namespace Ledybot
                             break;
 
                         case (int)gtsbotstates.presssearch:
-                            Program.f1.ChangeStatus("Pressing seek button");
+                            Program.f1.ChangeStatus("Pressing Search button");
                             Program.helper.quicktouch(200, 180, commandtime);
 
                             if (searchDirection == SEARCHDIRECTION_FROMBACK)
@@ -540,7 +541,7 @@ namespace Ledybot
                                 }
                                 else
                                 {
-                                    botState = (int)gtsbotstates.research;
+                                    botState = (int)gtsbotstates.botstart;
                                 }
                             }
                             break;
