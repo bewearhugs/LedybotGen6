@@ -29,15 +29,24 @@ namespace Ledybot
         private const int SEARCHDIRECTION_FROMBACKFIRSTPAGEONLY = 1;
         private const int SEARCHDIRECTION_FROMFRONT = 2;
 
+        private bool correctScreen;
+
+        uint PSSMenuOFF;
+        uint PSSMenuIN;
+        uint PSSMenuOUT;
+
+        uint IsConnected;
+
+        int SeekDepositScreen;
+        int SearchScreen;
+        int GTSScreen;
+        uint currentScreen;
+
         uint GTSPageSize;
         uint GTSPageIndex;
         uint GTSCurrentView;
 
         uint GTSListBlock;
-
-        uint GTSBlockAll;
-        uint GTSBlockStart;
-        uint GTSBlockEnd;
 
         uint GTSBlockEntrySize;
 
@@ -99,7 +108,7 @@ namespace Ledybot
         private async Task<bool> isCorrectWindow(int expectedScreen)
         {
             await Task.Delay(o3dswaittime);
-            await Program.helper.waitNTRread(0x00);
+            await Program.helper.waitNTRread(currentScreen);
             int screenID = (int)Program.helper.lastRead;
 
             //file.WriteLine("Checkscreen: " + expectedScreen + " - " + screenID + " botstate:" + botState);
@@ -158,6 +167,20 @@ namespace Ledybot
 
             if (game == 3) // Omega Rubin and Alpha Sapphire
             {
+                PSSMenuOFF = 0x19C21C;
+                PSSMenuIN = 0x83A0C8;
+                PSSMenuOUT = 0x50DFB0;
+
+                currentScreen = 0x08335290;
+
+                SeekDepositScreen = 0x20F1EC;
+                SearchScreen = 0x00;
+                GTSScreen = 0x5DD4A0;
+
+                BoxScreen = 0x1311B30;
+
+                IsConnected = 0x602110;
+
                 GTSPageSize = 0x08C6D69C;
                 GTSPageIndex = 0x08C6945C;
                 GTSCurrentView = 0x08C6D6AC;
@@ -167,7 +190,6 @@ namespace Ledybot
 
                 BoxInject = 0x8C9E134;
 
-                BoxScreen = 0x1311B30;
 
                 PokemonToFind = 0x08335290;
                 PokemonToFindLevel = 0x08335298;
@@ -175,6 +197,8 @@ namespace Ledybot
             }
             if (game == 4) // X and Y
             {
+
+
                 GTSPageSize = 0x08C66080;
                 GTSPageIndex = 0x08C61E40;
                 GTSCurrentView = 0x08C66090;
@@ -221,6 +245,14 @@ namespace Ledybot
                             break;
 
                         case (int)gtsbotstates.pressSeek:
+
+                            correctScreen = await isCorrectWindow(SeekDepositScreen);
+                            if (!correctScreen)
+                            {
+                                botState = (int)gtsbotstates.panic;
+                                break;
+                            }
+
                             Program.f1.ChangeStatus("Pressing seek button");
                             await Program.helper.waitbutton(Program.PKTable.keyA);
                             await Task.Delay(1000);
@@ -228,6 +260,13 @@ namespace Ledybot
                             break;
 
                         case (int)gtsbotstates.startsearch:
+
+                            correctScreen = await isCorrectWindow(SearchScreen);
+                            if (!correctScreen)
+                            {
+                                botState = (int)gtsbotstates.panic;
+                                break;
+                            }
 
                             //Write wanted Pokemon, Level, Gender to Ram, won't Display it but works.
                             Program.f1.ChangeStatus("Setting Pokemon to find");
@@ -253,6 +292,13 @@ namespace Ledybot
                             break;
 
                         case (int)gtsbotstates.findPokemon:
+
+                            correctScreen = await isCorrectWindow(GTSScreen);
+                            if (!correctScreen)
+                            {
+                                botState = (int)gtsbotstates.panic;
+                                break;
+                            }
 
                             await Program.helper.waitNTRread(GTSPageSize);
                             uint Entries = (Program.helper.lastRead);
@@ -565,20 +611,72 @@ namespace Ledybot
                             }
                             Program.f1.ChangeStatus("Recovery Mode");
 
-                           
+                            //In case of a Communication Error
+                            //Program.helper.quicktouch(0, 0, commandtime);
+                            Program.helper.quickbuton(Program.PKTable.keyA, 250);
+                            await Task.Delay(500);
+                            Program.helper.quickbuton(Program.PKTable.keyA, 250);
+                            await Task.Delay(5000);
+
                             // Spam B to get out of GTS
-                            for (int i = 0; i < 15; i++)
+                            for (int i = 0; i < 20; i++)
                             {
+                                Program.f1.ChangeStatus("Recovery Mode - trying return to PSS Menu...");
                                 Program.helper.quickbuton(Program.PKTable.keyB, commandtime + 200);
-                                await Task.Delay(2000);
+                                await Task.Delay(500);
                             }
 
 
-                            Program.helper.quicktouch(170, 2, 200);
-                            Program.helper.quicktouch(100, 50, 200);
-                            Program.helper.quickbuton(Program.PKTable.keyA, 250);
-                            Program.helper.quickbuton(Program.PKTable.keyA, 250);
-                            Program.helper.quickbuton(Program.PKTable.keyA, 250);
+
+                            //Check if Connected
+                            waitTaskbool = Program.helper.waitNTRread(IsConnected);
+                            if (await waitTaskbool)
+                            {
+                                if (Program.helper.lastRead == 0)
+                                {
+                                    Program.f1.ChangeStatus("Recovery Mode - lost connected, trying to reconnect...");
+                                    Program.helper.quicktouch(235, 5, commandtime);
+                                    await Task.Delay(2000);
+                                    Program.helper.quicktouch(150, 140, commandtime);
+                                    await Task.Delay(2000);
+                                    Program.helper.quickbuton(Program.PKTable.keyA, commandtime);
+                                    await Task.Delay(60000);
+                                    //Disconnected
+                                }
+                            }
+
+
+                            waitTaskbool = Program.helper.waitNTRread(PSSMenuOFF);
+                            if (await waitTaskbool)
+                            {
+                                //Re-Enter GTS
+                                if (Program.helper.lastRead == PSSMenuIN)
+                                {
+                                    Program.f1.ChangeStatus("Recovery Mode - PSS Menu detected, re-enter GTS...");
+                                    Program.helper.quicktouch(100, 50, commandtime);
+                                    await Task.Delay(3000);
+                                    Program.helper.quickbuton(Program.PKTable.keyA, commandtime);
+                                    Program.helper.quickbuton(Program.PKTable.keyA, commandtime);
+                                    await Task.Delay(15000);
+                                    botState = (int)gtsbotstates.pressSeek;
+                                    break;
+                                }
+                                else if (Program.helper.lastRead == PSSMenuOUT)
+                                {
+                                    Program.helper.quickbuton(Program.PKTable.keyB, commandtime);
+                                    await Task.Delay(500);
+                                    Program.helper.quickbuton(Program.PKTable.keySTART, commandtime);
+                                    await Task.Delay(1000);
+                                    Program.f1.ChangeStatus("Recovery Mode - PSS Menu detected, re-enter GTS...");
+                                    Program.helper.quicktouch(100, 50, commandtime);
+                                    await Task.Delay(3000);
+                                    Program.helper.quickbuton(Program.PKTable.keyA, commandtime);
+                                    Program.helper.quickbuton(Program.PKTable.keyA, commandtime);
+                                    await Task.Delay(15000);
+                                    botState = (int)gtsbotstates.pressSeek;
+                                    break;
+                                }
+                            }
                             await Task.Delay(10000);
                             botState = (int)gtsbotstates.botstart;
                             break;
