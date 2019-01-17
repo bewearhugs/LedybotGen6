@@ -37,10 +37,11 @@ namespace Ledybot
 
         uint IsConnected;
 
+        uint currentScreen;
+
         int SeekDepositScreen;
         int SearchScreen;
         int GTSScreen;
-        uint currentScreen;
 
         uint GTSPageSize;
         uint GTSPageIndex;
@@ -51,8 +52,6 @@ namespace Ledybot
         uint GTSBlockEntrySize;
 
         uint BoxInject;
-
-        uint BoxScreen;
 
         uint PokemonToFind;
         uint PokemonToFindGender;
@@ -177,8 +176,6 @@ namespace Ledybot
                 SearchScreen = 0x00;
                 GTSScreen = 0x5DD4A0;
 
-                BoxScreen = 0x1311B30;
-
                 IsConnected = 0x602110;
 
                 GTSPageSize = 0x08C6D69C;
@@ -226,6 +223,7 @@ namespace Ledybot
             pokemonGender = full[0];
             full = BitConverter.GetBytes(iPokemonToFindLevel);
             pokemonLevel = full[0];
+       
             try
             {
                 while (!botstop)
@@ -370,6 +368,8 @@ namespace Ledybot
                                     //Get the Current Entry Data
                                     Array.Copy(Program.helper.lastArray, (GTSBlockEntrySize * i) - Program.helper.lastRead, block, 0, 256);
 
+                                    if (i == (iEndIndex -1) && searchDirection == SEARCHDIRECTION_FROMBACK || i == (iEndIndex +1) && searchDirection == SEARCHDIRECTION_FROMFRONT || i == (iEndIndex - 1) && searchDirection == SEARCHDIRECTION_FROMBACKFIRSTPAGEONLY) { break; }
+
                                     //Collect Data
                                     dex = BitConverter.ToInt16(block, 0x0);  
 
@@ -379,7 +379,7 @@ namespace Ledybot
 
                                         if (details.Item1 == "")
                                         {
-                                            string szNickname = Encoding.Unicode.GetString(block, 0x08, 24).Trim('\0'); //fix to prevent nickname clipping. Count should be 24, 2 bytes per letter, 2x12=24, not 20.
+                                            string szNickname = Encoding.Unicode.GetString(block, 0x4, 24).Trim('\0').Substring(1); //fix to prevent nickname clipping. Count should be 24, 2 bytes per letter, 2x12=24, not 20.
                                             string szFileToFind = details.Item2 + szNickname + ".pk7";
                                             if (!File.Exists(szFileToFind))
                                             {
@@ -403,11 +403,11 @@ namespace Ledybot
 
                                             szTrainerName = Encoding.Unicode.GetString(block, 0x40, 24).Trim('\0');
                                             //Phrase = Encoding.Unicode.GetString(block, 0x5A, 30).Trim('\0');
-                                            int countryIndex = BitConverter.ToInt16(block, 0x30);
+                                            int countryIndex = BitConverter.ToInt16(block, 0x2F);
                                             string country = "-";
                                             Program.f1.countries.TryGetValue(countryIndex, out country);
                                             Program.f1.getSubRegions(countryIndex);
-                                            int subRegionIndex = BitConverter.ToInt16(block, 0x30);
+                                            int subRegionIndex = BitConverter.ToInt16(block, 0x31 );
                                             string subregion = "-";
                                             Program.f1.regions.TryGetValue(subRegionIndex, out subregion);
 
@@ -452,7 +452,6 @@ namespace Ledybot
 
                                 }
 
-
                             }
 
                             // No Pokemon found, return to Seek/Deposit Screen
@@ -471,7 +470,7 @@ namespace Ledybot
                             if (await waitTaskbool)
                             {
 
-                                string szNickname = Encoding.Unicode.GetString(block, 0x14, 24).Trim('\0'); //fix to prevent nickname clipping. Count should be 24, 2 bytes per letter, 2x12=24, not 20.
+                                string szNickname = Encoding.Unicode.GetString(block, 0x4, 24).Trim('\0').Substring(1); //fix to prevent nickname clipping. Count should be 24, 2 bytes per letter, 2x12=24, not 20.
 
 
                                 string szPath = details.Item1;
