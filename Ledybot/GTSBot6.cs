@@ -223,7 +223,7 @@ namespace Ledybot
             pokemonGender = full[0];
             full = BitConverter.GetBytes(iPokemonToFindLevel);
             pokemonLevel = full[0];
-       
+
             try
             {
                 while (!botstop)
@@ -297,6 +297,9 @@ namespace Ledybot
                                 botState = (int)gtsbotstates.panic;
                                 break;
                             }
+                            else
+                            {
+                            }
 
                             await Program.helper.waitNTRread(GTSPageSize);
                             uint Entries = (Program.helper.lastRead);
@@ -346,8 +349,8 @@ namespace Ledybot
                             if (searchDirection == SEARCHDIRECTION_FROMBACK || searchDirection == SEARCHDIRECTION_FROMBACKFIRSTPAGEONLY)
                             {
                                 CurrentView = Entries;
-                                iStartIndex = (int)Entries;
-                                iEndIndex = 0;
+                                iStartIndex = (int)Entries -1;
+                                iEndIndex = 1;
                                 iDirection = -1;
                             }
                             else
@@ -357,21 +360,17 @@ namespace Ledybot
                                 iEndIndex = (int)Entries + 1;
                                 iDirection = 1;
                             }
-
-
                             // Reading all Entries on Current Page
-                            waitTaskbool = Program.helper.waitNTRread(GTSListBlock, (uint)(256 * 100));
-                            if (await waitTaskbool)
-                            {
+                            await Program.helper.waitNTRread(GTSListBlock, (uint)(256 * 100));
+                            byte[] blockBytes = Program.helper.lastArray;
+
                                 for (int i = iStartIndex; i * iDirection < iEndIndex; i += iDirection)
                                 {
                                     //Get the Current Entry Data
-                                    Array.Copy(Program.helper.lastArray, (GTSBlockEntrySize * i) - Program.helper.lastRead, block, 0, 256);
-
-                                    if (i == (iEndIndex -1) && searchDirection == SEARCHDIRECTION_FROMBACK || i == (iEndIndex +1) && searchDirection == SEARCHDIRECTION_FROMFRONT || i == (iEndIndex - 1) && searchDirection == SEARCHDIRECTION_FROMBACKFIRSTPAGEONLY) { break; }
+                                    Array.Copy(blockBytes, (GTSBlockEntrySize * i) - Program.helper.lastRead, block, 0, 256);
 
                                     //Collect Data
-                                    dex = BitConverter.ToInt16(block, 0x0);  
+                                    dex = BitConverter.ToInt16(block, 0x0);
 
                                     if (Program.f1.giveawayDetails.ContainsKey(dex))
                                     {
@@ -379,7 +378,8 @@ namespace Ledybot
 
                                         if (details.Item1 == "")
                                         {
-                                            string szNickname = Encoding.Unicode.GetString(block, 0x4, 24).Trim('\0').Substring(1); //fix to prevent nickname clipping. Count should be 24, 2 bytes per letter, 2x12=24, not 20.
+                                            string szNickname = Encoding.Unicode.GetString(block, 0x4, 24).Substring(1).Trim('\0'); //fix to prevent nickname clipping. Count should be 24, 2 bytes per letter, 2x12=24, not 20.
+                                            szNickname = System.Text.RegularExpressions.Regex.Replace(szNickname, @"[^\u0020-\u007E]", string.Empty);
                                             string szFileToFind = details.Item2 + szNickname + ".pk7";
                                             if (!File.Exists(szFileToFind))
                                             {
@@ -396,8 +396,6 @@ namespace Ledybot
 
                                         int gender = block[0x2];
                                         int level = block[0x3];
-
-
                                         if ((gender == 0 || gender == details.Item3) && (level == 0 || level == details.Item4))
                                         {
 
@@ -407,10 +405,10 @@ namespace Ledybot
                                             string country = "-";
                                             Program.f1.countries.TryGetValue(countryIndex, out country);
                                             Program.f1.getSubRegions(countryIndex);
-                                            int subRegionIndex = BitConverter.ToInt16(block, 0x31 );
+                                            int subRegionIndex = BitConverter.ToInt16(block, 0x31);
                                             string subregion = "-";
                                             Program.f1.regions.TryGetValue(subRegionIndex, out subregion);
-
+                                            
 
                                             if (useLedySync && !Program.f1.banlist.Contains(szFC) && canThisTrade(principal, consoleName, szTrainerName, country, subregion, Program.PKTable.Species6[dex - 1], szFC, PageIndex + "", (i - 1) + ""))
                                             {
@@ -449,11 +447,10 @@ namespace Ledybot
                                         i = (int)Program.helper.lastRead;
 
                                     }
-
+                                    PokemonFound = false;
                                 }
 
-                            }
-
+                            
                             // No Pokemon found, return to Seek/Deposit Screen
                             if (!PokemonFound)
                             {
@@ -470,7 +467,8 @@ namespace Ledybot
                             if (await waitTaskbool)
                             {
 
-                                string szNickname = Encoding.Unicode.GetString(block, 0x4, 24).Trim('\0').Substring(1); //fix to prevent nickname clipping. Count should be 24, 2 bytes per letter, 2x12=24, not 20.
+                                string szNickname = Encoding.Unicode.GetString(block, 0x4, 24).Substring(1).Trim('\0'); //fix to prevent nickname clipping. Count should be 24, 2 bytes per letter, 2x12=24, not 20.
+                                szNickname = System.Text.RegularExpressions.Regex.Replace(szNickname, @"[^\u0020-\u007E]", string.Empty);
 
 
                                 string szPath = details.Item1;
@@ -512,7 +510,7 @@ namespace Ledybot
                                 await Task.Delay(2200);
                                 await Program.helper.waitNTRwrite(GTSCurrentView, (uint)CurrentView, iPID);
                                 Program.helper.quickbuton(Program.PKTable.keyB, 200);
-                                await Task.Delay(500);
+                                await Task.Delay(800);
                                 Program.helper.quickbuton(Program.PKTable.keyB, 200);
                                 await Task.Delay(2000);
                                 Program.helper.quickbuton(Program.PKTable.keyA, 200);
@@ -558,7 +556,6 @@ namespace Ledybot
                                 await Task.Delay(1000);
                                 // wait if trade is finished
                                 await Task.Delay(35000);
-                                PokemonFound = true;
                                 bool cont = false;
 
                                 foreach (KeyValuePair<int, Tuple<string, string, int, int, int, ArrayList>> pair in Program.f1.giveawayDetails)
@@ -578,7 +575,10 @@ namespace Ledybot
 
                                 startIndex = 0;
                                 listlength = 0;
+                                CurrentView = 0;
+
                                 foundLastPage = false;
+                                PokemonFound = false;
 
                                 if (bReddit)
                                 {
@@ -587,6 +587,7 @@ namespace Ledybot
                                 else
                                 {
                                     botState = (int)gtsbotstates.botstart;
+                                    break;
                                 }
                             }
                             break;
@@ -612,10 +613,47 @@ namespace Ledybot
 
                             //In case of a Communication Error
                             //Program.helper.quicktouch(0, 0, commandtime);
-                            Program.helper.quickbuton(Program.PKTable.keyA, 250);
-                            await Task.Delay(500);
-                            Program.helper.quickbuton(Program.PKTable.keyA, 250);
-                            await Task.Delay(5000);
+                          
+                            await Program.helper.waitNTRread(currentScreen);
+
+                            if ((int)Program.helper.lastRead == GTSScreen)
+                            {
+                                Program.f1.ChangeStatus("Recovery Mode - GTS Screen Detected!");
+                                Program.helper.quickbuton(Program.PKTable.keyB, 250);
+                                await Task.Delay(2000);
+                                Program.helper.quickbuton(Program.PKTable.keyB, 250);
+                                await Task.Delay(2000);
+                                botState = (int)gtsbotstates.botstart;
+                                break;
+                            }
+
+                            if ((int)Program.helper.lastRead == SearchScreen)
+                            {
+                                Program.f1.ChangeStatus("Recovery Mode - Search Screen Detected!");
+                                Program.helper.quickbuton(Program.PKTable.keyB, 250);
+                                await Task.Delay(2000);
+                                botState = (int)gtsbotstates.botstart;
+                                break;
+                            }
+
+                            if ((int)Program.helper.lastRead == SeekDepositScreen)
+                            {
+                                Program.f1.ChangeStatus("Recovery Mode - Seek/Deposit Screen Detected!");
+                                botState = (int)gtsbotstates.botstart;
+                                break;
+                            }
+
+                            if ((int)Program.helper.lastRead == iPokemonToFind)
+                            {
+                                Program.f1.ChangeStatus("Recovery Mode - No Entries Found!");
+                                Program.helper.quickbuton(Program.PKTable.keyA, 250);
+                                await Task.Delay(2000);
+                                Program.helper.quickbuton(Program.PKTable.keyB, 250);
+                                await Task.Delay(2000);
+                                botState = (int)gtsbotstates.botstart;
+                                break;
+                            }
+
 
                             // Spam B to get out of GTS
                             for (int i = 0; i < 20; i++)
