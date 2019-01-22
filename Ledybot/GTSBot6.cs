@@ -615,7 +615,9 @@ namespace Ledybot
                             Program.f1.ChangeStatus("Recovery Mode");
 
                             //In case of a Communication Error
-                            //Program.helper.quicktouch(0, 0, commandtime);
+                            Program.helper.quicktouch(50, 0, commandtime);
+                            await Task.Delay(250);
+                            Program.helper.quickbuton(Program.PKTable.keySELECT, commandtime);
 
                             //Check if Connected
                             waitTaskbool = Program.helper.waitNTRread(IsConnected);
@@ -649,28 +651,6 @@ namespace Ledybot
                                     botState = (int)gtsbotstates.botstart;
                                     break;
                                 }
-                                
-                                else if (Program.helper.lastRead == PSSMenuOUT)
-                                {
-                                    Program.helper.quickbuton(Program.PKTable.keyB, commandtime);
-                                    await Task.Delay(500);
-                                    Program.helper.quickbuton(Program.PKTable.keySTART, commandtime);
-                                    await Task.Delay(2000);
-                                    botState = (int)gtsbotstates.panic;
-                                    break;
-                                    /*
-                                    Program.f1.ChangeStatus("Recovery Mode - PSS Menu detected, re-enter GTS...");
-                                    Program.helper.quicktouch(100, 50, commandtime);
-                                    await Task.Delay(3000);
-                                    Program.helper.quickbuton(Program.PKTable.keyA, commandtime);
-                                    Program.helper.quickbuton(Program.PKTable.keyA, commandtime);
-                                    await Task.Delay(15000);
-                                    botState = (int)gtsbotstates.botstart;
-                                    break;
-                                    */
-                                }
-                                
-                            
 
                             await Program.helper.waitNTRread(currentScreen);
 
@@ -703,15 +683,14 @@ namespace Ledybot
 
                             if ((int)Program.helper.lastRead == iPokemonToFind)
                             {
-                                Program.f1.ChangeStatus("Recovery Mode - No Entries Found!");
-                                Program.helper.quickbuton(Program.PKTable.keyA, 250);
+                                Program.f1.ChangeStatus("Recovery Mode - Search Screen Detected!");
+                                Program.helper.quicktouch(50, 0, commandtime);
                                 await Task.Delay(2000);
                                 Program.helper.quickbuton(Program.PKTable.keyB, 250);
                                 await Task.Delay(2000);
                                 botState = (int)gtsbotstates.botstart;
                                 break;
                             }
-
 
                             // Spam B to get out of GTS
                             for (int i = 0; i < 20; i++)
