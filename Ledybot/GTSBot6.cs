@@ -161,7 +161,7 @@ namespace Ledybot
             if (game == 3) // Omega Rubin and Alpha Sapphire
             {
                 PSSMenuOFF = 0x19C21C;
-                PSSMenuIN = 0x83A0C8;
+                PSSMenuIN = 0x83E0C8;
                 PSSMenuOUT = 0x50DFB0;
 
                 currentScreen = 0x08335290;
@@ -635,9 +635,8 @@ namespace Ledybot
                             }
 
 
-                            waitTaskbool = Program.helper.waitNTRread(PSSMenuOFF);
-                            if (await waitTaskbool)
-                            {
+                            await Program.helper.waitNTRread(PSSMenuOFF);
+                            
                                 //Re-Enter GTS
                                 if (Program.helper.lastRead == PSSMenuIN)
                                 {
@@ -656,7 +655,7 @@ namespace Ledybot
                                     Program.helper.quickbuton(Program.PKTable.keyB, commandtime);
                                     await Task.Delay(500);
                                     Program.helper.quickbuton(Program.PKTable.keySTART, commandtime);
-                                    await Task.Delay(1000);
+                                    await Task.Delay(2000);
                                     botState = (int)gtsbotstates.panic;
                                     break;
                                     /*
@@ -671,7 +670,7 @@ namespace Ledybot
                                     */
                                 }
                                 
-                            }
+                            
 
                             await Program.helper.waitNTRread(currentScreen);
 
