@@ -227,7 +227,7 @@ namespace Ledybot
             pokemonGender = full[0];
             full = BitConverter.GetBytes(iPokemonToFindLevel);
             pokemonLevel = full[0];
-          
+
             try
             {
                 while (!botstop)
@@ -353,7 +353,7 @@ namespace Ledybot
                             if (searchDirection == SEARCHDIRECTION_FROMBACK || searchDirection == SEARCHDIRECTION_FROMBACKFIRSTPAGEONLY)
                             {
                                 CurrentView = Entries;
-                                iStartIndex = (int)Entries -1;
+                                iStartIndex = (int)Entries - 1;
                                 iEndIndex = 1;
                                 iDirection = -1;
                             }
@@ -368,53 +368,63 @@ namespace Ledybot
                             await Program.helper.waitNTRread(GTSListBlock, (uint)(256 * 100));
                             byte[] blockBytes = Program.helper.lastArray;
 
-                                for (int i = iStartIndex; i * iDirection < iEndIndex; i += iDirection)
+                            for (int i = iStartIndex; i * iDirection < iEndIndex; i += iDirection)
+                            {
+                                //Get the Current Entry Data
+                                Array.Copy(blockBytes, (GTSBlockEntrySize * i) - Program.helper.lastRead, block, 0, 256);
+
+                                //Collect Data
+                                dex = BitConverter.ToInt16(block, 0x0);
+
+                                if (Program.f1.giveawayDetails.ContainsKey(dex))
                                 {
-                                    //Get the Current Entry Data
-                                    Array.Copy(blockBytes, (GTSBlockEntrySize * i) - Program.helper.lastRead, block, 0, 256);
+                                    Program.f1.giveawayDetails.TryGetValue(dex, out details);
 
-                                    //Collect Data
-                                    dex = BitConverter.ToInt16(block, 0x0);
-
-                                    if (Program.f1.giveawayDetails.ContainsKey(dex))
+                                    if (details.Item1 == "")
                                     {
-                                        Program.f1.giveawayDetails.TryGetValue(dex, out details);
+                                        string szNickname = Encoding.Unicode.GetString(block, 0x4, 24).Substring(2).Trim('\0'); //fix to prevent nickname clipping. Count should be 24, 2 bytes per letter, 2x12=24, not 20.
 
-                                        if (details.Item1 == "")
+                                        string szFileToFind = details.Item2 + szNickname + ".pk7";
+                                        if (!File.Exists(szFileToFind))
                                         {
-                                            string szNickname = Encoding.Unicode.GetString(block, 0x4, 24).Substring(1).Trim('\0'); //fix to prevent nickname clipping. Count should be 24, 2 bytes per letter, 2x12=24, not 20.
-                                            szNickname = System.Text.RegularExpressions.Regex.Replace(szNickname, @"[^\u0020-\u007E]", string.Empty);
-                                            string szFileToFind = details.Item2 + szNickname + ".pk7";
-                                            if (!File.Exists(szFileToFind))
-                                            {
-                                                continue;
-                                            }
+                                            continue;
                                         }
-                                        Array.Copy(block, 0x3C, principal, 0, 4);
-                                        byte check = Program.f1.calculateChecksum(principal);
-                                        byte[] friendcode = new byte[8];
-                                        Array.Copy(principal, 0, friendcode, 0, 4);
-                                        friendcode[4] = check;
-                                        long i_FC = BitConverter.ToInt64(friendcode, 0);
-                                        szFC = i_FC.ToString().PadLeft(12, '0');
+                                    }
+                                    Array.Copy(block, 0x3C, principal, 0, 4);
+                                    byte check = Program.f1.calculateChecksum(principal);
+                                    byte[] friendcode = new byte[8];
+                                    Array.Copy(principal, 0, friendcode, 0, 4);
+                                    friendcode[4] = check;
+                                    long i_FC = BitConverter.ToInt64(friendcode, 0);
+                                    szFC = i_FC.ToString().PadLeft(12, '0');
 
-                                        int gender = block[0x2];
-                                        int level = block[0x3];
-                                        if ((gender == 0 || gender == details.Item3) && (level == 0 || level == details.Item4))
+                                    int gender = block[0x2];
+                                    int level = block[0x3];
+                                    if ((gender == 0 || gender == details.Item3) && (level == 0 || level == details.Item4))
+                                    {
+
+                                        szTrainerName = Encoding.Unicode.GetString(block, 0x40, 24).Trim('\0');
+                                        //Phrase = Encoding.Unicode.GetString(block, 0x5A, 30).Trim('\0');
+                                        int countryIndex = BitConverter.ToInt16(block, 0x2F);
+                                        string country = "-";
+                                        Program.f1.countries.TryGetValue(countryIndex, out country);
+                                        Program.f1.getSubRegions(countryIndex);
+                                        int subRegionIndex = BitConverter.ToInt16(block, 0x31);
+                                        string subregion = "-";
+                                        Program.f1.regions.TryGetValue(subRegionIndex, out subregion);
+
+
+                                        if (useLedySync && !Program.f1.banlist.Contains(szFC) && canThisTrade(principal, consoleName, szTrainerName, country, subregion, Program.PKTable.Species6[dex - 1], szFC, PageIndex + "", (i - 1) + ""))
                                         {
-
-                                            szTrainerName = Encoding.Unicode.GetString(block, 0x40, 24).Trim('\0');
-                                            //Phrase = Encoding.Unicode.GetString(block, 0x5A, 30).Trim('\0');
-                                            int countryIndex = BitConverter.ToInt16(block, 0x2F);
-                                            string country = "-";
-                                            Program.f1.countries.TryGetValue(countryIndex, out country);
-                                            Program.f1.getSubRegions(countryIndex);
-                                            int subRegionIndex = BitConverter.ToInt16(block, 0x31);
-                                            string subregion = "-";
-                                            Program.f1.regions.TryGetValue(subRegionIndex, out subregion);
-                                            
-
-                                            if (useLedySync && !Program.f1.banlist.Contains(szFC) && canThisTrade(principal, consoleName, szTrainerName, country, subregion, Program.PKTable.Species6[dex - 1], szFC, PageIndex + "", (i - 1) + ""))
+                                            PokemonFound = true;
+                                            CurrentView = (uint)i;
+                                            Program.f1.ChangeStatus("Found a pokemon to trade");
+                                            botState = (int)gtsbotstates.trade;
+                                            break;
+                                        }
+                                        else if (!useLedySync)
+                                        {
+                                            if ((!bReddit || Program.f1.commented.Contains(szFC)) && !details.Item6.Contains(BitConverter.ToInt32(principal, 0)) && !Program.f1.banlist.Contains(szFC))
                                             {
                                                 PokemonFound = true;
                                                 CurrentView = (uint)i;
@@ -422,39 +432,29 @@ namespace Ledybot
                                                 botState = (int)gtsbotstates.trade;
                                                 break;
                                             }
-                                            else if (!useLedySync)
-                                            {
-                                                if ((!bReddit || Program.f1.commented.Contains(szFC)) && !details.Item6.Contains(BitConverter.ToInt32(principal, 0)) && !Program.f1.banlist.Contains(szFC))
-                                                {
-                                                    PokemonFound = true;
-                                                    CurrentView = (uint)i;
-                                                    Program.f1.ChangeStatus("Found a pokemon to trade");
-                                                    botState = (int)gtsbotstates.trade;
-                                                    break;
-                                                }
-                                            }
                                         }
                                     }
-
-
-                                    if (searchDirection == SEARCHDIRECTION_FROMBACK && startIndex > 100 && i * iDirection < iEndIndex)
-                                    {
-                                        Program.f1.ChangeStatus("No pokemon to trade on this page, try previous page");
-                                        Program.helper.quickbuton(Program.PKTable.DpadLEFT, commandtime);
-                                        await Task.Delay(commandtime + delaytime + 1000);
-                                        startIndex -= 200;
-                                        await Program.helper.waitNTRwrite(GTSPageIndex, (uint)startIndex, iPID);
-                                        await Task.Delay(commandtime + delaytime + 1000);
-                                        Program.helper.quickbuton(Program.PKTable.DpadRIGHT, commandtime);
-                                        await Task.Delay(commandtime + delaytime + 1000);
-                                        await Program.helper.waitNTRread(GTSPageSize);
-                                        i = (int)Program.helper.lastRead;
-
-                                    }
-                                    PokemonFound = false;
                                 }
 
-                            
+
+                                if (searchDirection == SEARCHDIRECTION_FROMBACK && startIndex > 100 && i * iDirection < iEndIndex)
+                                {
+                                    Program.f1.ChangeStatus("No pokemon to trade on this page, try previous page");
+                                    Program.helper.quickbuton(Program.PKTable.DpadLEFT, commandtime);
+                                    await Task.Delay(commandtime + delaytime + 1000);
+                                    startIndex -= 200;
+                                    await Program.helper.waitNTRwrite(GTSPageIndex, (uint)startIndex, iPID);
+                                    await Task.Delay(commandtime + delaytime + 1000);
+                                    Program.helper.quickbuton(Program.PKTable.DpadRIGHT, commandtime);
+                                    await Task.Delay(commandtime + delaytime + 1000);
+                                    await Program.helper.waitNTRread(GTSPageSize);
+                                    i = (int)Program.helper.lastRead;
+
+                                }
+                                PokemonFound = false;
+                            }
+
+
                             // No Pokemon found, return to Seek/Deposit Screen
                             if (!PokemonFound)
                             {
@@ -471,9 +471,7 @@ namespace Ledybot
                             if (await waitTaskbool)
                             {
 
-                                string szNickname = Encoding.Unicode.GetString(block, 0x4, 24).Substring(1).Trim('\0'); //fix to prevent nickname clipping. Count should be 24, 2 bytes per letter, 2x12=24, not 20.
-                                szNickname = System.Text.RegularExpressions.Regex.Replace(szNickname, @"[^\u0020-\u007E]", string.Empty);
-
+                                string szNickname = Encoding.Unicode.GetString(block, 0x4, 24).Substring(2).Trim('\0'); //fix to prevent nickname clipping. Count should be 24, 2 bytes per letter, 2x12=24, not 20.
 
                                 string szPath = details.Item1;
                                 string szFileToFind = details.Item2 + szNickname + ".pk7";
@@ -509,14 +507,12 @@ namespace Ledybot
 
                                 Program.f1.AppendListViewItem(szTrainerName, szNickname, country, subregion, Program.PKTable.Species6[dex - 1], szFC, (PageIndex / 100).ToString(), CurrentView.ToString());
 
-                                //Enter current viewed Entry, write wanted current view to RAM, quit current viewed Entry
-                                Program.helper.quickbuton(Program.PKTable.keyA, 200);
-                                await Task.Delay(2200);
+                                // Open Settings, write CurrentView Index to wanted, return.
+                                Program.helper.quickbuton(Program.PKTable.keyY, 200);
+                                await Task.Delay(1200);
                                 await Program.helper.waitNTRwrite(GTSCurrentView, (uint)CurrentView, iPID);
                                 Program.helper.quickbuton(Program.PKTable.keyB, 200);
-                                await Task.Delay(800);
-                                Program.helper.quickbuton(Program.PKTable.keyB, 200);
-                                await Task.Delay(2000);
+                                await Task.Delay(1500);
                                 Program.helper.quickbuton(Program.PKTable.keyA, 200);
                                 await Task.Delay(3000);
 
@@ -638,19 +634,19 @@ namespace Ledybot
 
 
                             await Program.helper.waitNTRread(PSSMenuOFF);
-                            
-                                //Re-Enter GTS
-                                if (Program.helper.lastRead == PSSMenuIN)
-                                {
-                                    Program.f1.ChangeStatus("Recovery Mode - PSS Menu detected, re-enter GTS...");
-                                    Program.helper.quicktouch(100, 50, commandtime);
-                                    await Task.Delay(3000);
-                                    Program.helper.quickbuton(Program.PKTable.keyA, commandtime);
-                                    Program.helper.quickbuton(Program.PKTable.keyA, commandtime);
-                                    await Task.Delay(15000);
-                                    botState = (int)gtsbotstates.botstart;
-                                    break;
-                                }
+
+                            //Re-Enter GTS
+                            if (Program.helper.lastRead == PSSMenuIN)
+                            {
+                                Program.f1.ChangeStatus("Recovery Mode - PSS Menu detected, re-enter GTS...");
+                                Program.helper.quicktouch(100, 50, commandtime);
+                                await Task.Delay(3000);
+                                Program.helper.quickbuton(Program.PKTable.keyA, commandtime);
+                                Program.helper.quickbuton(Program.PKTable.keyA, commandtime);
+                                await Task.Delay(15000);
+                                botState = (int)gtsbotstates.botstart;
+                                break;
+                            }
 
                             await Program.helper.waitNTRread(currentScreen);
 
