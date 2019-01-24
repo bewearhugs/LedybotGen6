@@ -360,7 +360,7 @@ namespace Ledybot
                             else
                             {
                                 CurrentView = 0;
-                                iStartIndex = 1;
+                                iStartIndex = 0;
                                 iEndIndex = (int)Entries + 1;
                                 iDirection = 1;
                             }
