@@ -35,6 +35,10 @@ namespace Ledybot
         uint PSSMenuIN;
         uint PSSMenuOUT;
 
+        uint BoxScreenOFF;
+        uint BoxScreenIN;
+        uint BoxScreenOUT;
+
         uint IsConnected;
 
         uint currentScreen;
@@ -42,6 +46,7 @@ namespace Ledybot
         int SeekDepositScreen;
         int SearchScreen;
         int GTSScreen;
+        int BoxScreen;
 
         uint GTSPageSize;
         uint GTSPageIndex;
@@ -97,6 +102,7 @@ namespace Ledybot
         public string szTrainerName { get; private set; }
         public string Phrase { get; private set; }
         public string Message { get; private set; }
+        public int LastPageIndex = 0;
 
         private async Task<bool> isCorrectWindow(int expectedScreen)
         {
@@ -164,11 +170,16 @@ namespace Ledybot
                 PSSMenuIN = 0x83E0C8;
                 PSSMenuOUT = 0x50DFB0;
 
-                currentScreen = 0x08335290;
+                BoxScreenOFF = 0x19BFCC;
+                BoxScreenIN = 0x739F30;
+                BoxScreenOUT = 0x50DFB0;
 
-                SeekDepositScreen = 0x20F1EC;
-                SearchScreen = 0x00;
-                GTSScreen = 0x5DD4A0;
+                currentScreen = 0x62C2EC;
+
+                SeekDepositScreen = 0x40712E0;
+                SearchScreen = 0x4072090;
+                GTSScreen = 0x407F720;
+                BoxScreen = 0x4011170;
 
                 IsConnected = 0x602110;
 
@@ -228,6 +239,15 @@ namespace Ledybot
             full = BitConverter.GetBytes(iPokemonToFindLevel);
             pokemonLevel = full[0];
 
+            /*
+            //OFFSET TEST
+            while (true)
+            {
+                await Program.helper.waitNTRread(0x62C2EC);
+                MessageBox.Show(Program.helper.lastRead.ToString("X"));
+            }
+            */
+
             try
             {
                 while (!botstop)
@@ -282,13 +302,6 @@ namespace Ledybot
                             Program.f1.ChangeStatus("Pressing Search button");
                             Program.helper.quicktouch(200, 180, commandtime);
 
-                            if (searchDirection == SEARCHDIRECTION_FROMBACK)
-                            {
-                                //Write Index while Loading the Frame.
-                                await Task.Delay(1000);
-                                await Program.helper.waitNTRwrite(GTSPageIndex, (uint)startIndex, iPID);
-                            }
-
                             await Task.Delay(4000);
                             botState = (int)gtsbotstates.findPokemon;
                             break;
@@ -301,15 +314,23 @@ namespace Ledybot
                                 botState = (int)gtsbotstates.panic;
                                 break;
                             }
-                            else
+
+                            if (searchDirection == SEARCHDIRECTION_FROMBACK)
                             {
+                                // Open Settings, Write Index while Loading the Frame, return.
+                                Program.helper.quickbuton(Program.PKTable.keyY, 200);
+                                await Task.Delay(1200);
+                                await Program.helper.waitNTRwrite(GTSPageIndex, (uint)startIndex, iPID);
+                                Program.helper.quickbuton(Program.PKTable.keyB, 200);
+                                await Task.Delay(1500);                              
                             }
+
 
                             await Program.helper.waitNTRread(GTSPageSize);
                             uint Entries = (Program.helper.lastRead);
                             CurrentView = Entries;
 
-                            if (Entries == 100 && !foundLastPage && searchDirection == SEARCHDIRECTION_FROMBACK)
+                            if (Entries == 100 && !foundLastPage && searchDirection == SEARCHDIRECTION_FROMBACK && LastPageIndex == 0)
                             {
                                 Program.f1.ChangeStatus("Moving to last page");
 
@@ -322,7 +343,7 @@ namespace Ledybot
                                     Program.helper.quickbuton(Program.PKTable.DpadLEFT, commandtime);
                                     await Task.Delay(commandtime + delaytime + 1000);
                                     Program.helper.quickbuton(Program.PKTable.DpadRIGHT, commandtime);
-                                    await Task.Delay(commandtime + delaytime + 1000);
+                                    await Task.Delay(commandtime + delaytime + 2000);
                                     await Program.helper.waitNTRread(GTSPageSize);
                                     Entries = Program.helper.lastRead;
 
@@ -344,6 +365,7 @@ namespace Ledybot
                                     PageMoveAttemps++;
                                 }
                             }
+                           
 
                             Program.f1.ChangeStatus("Looking for a Pokemon to Trade");
 
@@ -439,17 +461,24 @@ namespace Ledybot
 
                                 if (searchDirection == SEARCHDIRECTION_FROMBACK && startIndex > 100 && i * iDirection < iEndIndex)
                                 {
-                                    Program.f1.ChangeStatus("No pokemon to trade on this page, try previous page");
-                                    Program.helper.quickbuton(Program.PKTable.DpadLEFT, commandtime);
-                                    await Task.Delay(commandtime + delaytime + 1000);
-                                    startIndex -= 200;
-                                    await Program.helper.waitNTRwrite(GTSPageIndex, (uint)startIndex, iPID);
-                                    await Task.Delay(commandtime + delaytime + 1000);
-                                    Program.helper.quickbuton(Program.PKTable.DpadRIGHT, commandtime);
-                                    await Task.Delay(commandtime + delaytime + 1000);
-                                    await Program.helper.waitNTRread(GTSPageSize);
-                                    i = (int)Program.helper.lastRead;
-
+                                    if (startIndex < 0)
+                                    {
+                                        PokemonFound = false;
+                                    }
+                                    else
+                                    {
+                                        Program.f1.ChangeStatus("No pokemon to trade on this page, try previous page");
+                                        Program.helper.quickbuton(Program.PKTable.DpadLEFT, commandtime);
+                                        await Task.Delay(commandtime + delaytime + 2000);
+                                        startIndex -= 200;
+                                        await Program.helper.waitNTRwrite(GTSPageIndex, (uint)startIndex, iPID);
+                                        await Task.Delay(commandtime + delaytime + 1000);
+                                        Program.helper.quickbuton(Program.PKTable.DpadRIGHT, commandtime);
+                                        await Task.Delay(commandtime + delaytime + 2000);
+                                        LastPageIndex = startIndex;
+                                        botState = (int)gtsbotstates.findPokemon;
+                                        break;
+                                    }
                                 }
                                 PokemonFound = false;
                             }
@@ -575,6 +604,7 @@ namespace Ledybot
 
                                 startIndex = 0;
                                 CurrentView = 0;
+                                LastPageIndex = 0;
 
                                 foundLastPage = false;
                                 PokemonFound = false;
@@ -585,7 +615,7 @@ namespace Ledybot
                                 }
                                 else
                                 {
-                                    botState = (int)gtsbotstates.botstart;
+                                    botState = (int)gtsbotstates.pressSeek;
                                     break;
                                 }
                             }
@@ -614,6 +644,7 @@ namespace Ledybot
                             Program.helper.quicktouch(50, 0, commandtime);
                             await Task.Delay(250);
                             Program.helper.quickbuton(Program.PKTable.keySELECT, commandtime);
+                            await Task.Delay(250);
 
                             //Check if Connected
                             waitTaskbool = Program.helper.waitNTRread(IsConnected);
@@ -632,7 +663,6 @@ namespace Ledybot
                                 }
                             }
 
-
                             await Program.helper.waitNTRread(PSSMenuOFF);
 
                             //Re-Enter GTS
@@ -644,11 +674,40 @@ namespace Ledybot
                                 Program.helper.quickbuton(Program.PKTable.keyA, commandtime);
                                 Program.helper.quickbuton(Program.PKTable.keyA, commandtime);
                                 await Task.Delay(15000);
-                                botState = (int)gtsbotstates.botstart;
+                                botState = (int)gtsbotstates.pressSeek;
                                 break;
                             }
 
+                            await Program.helper.waitNTRread(PokemonToFind);
+                            if ((int)Program.helper.lastRead == iPokemonToFind)
+                            {
+                                Program.f1.ChangeStatus("Recovery Mode - No Entries found Detected!");
+                                Program.helper.quicktouch(50, 0, commandtime);
+                                await Task.Delay(2000);
+                                Program.helper.quickbuton(Program.PKTable.keyB, 250);
+                                await Task.Delay(2000);
+                                botState = (int)gtsbotstates.pressSeek;
+                                break;
+                            }
+
+
                             await Program.helper.waitNTRread(currentScreen);
+
+                            //Box Screen Detected
+                            if ((int)Program.helper.lastRead == BoxScreenIN)
+                            {
+                                Program.f1.ChangeStatus("Recovery Mode - Box Screen Detected!");
+                                Program.helper.quickbuton(Program.PKTable.keyB, 250);
+                                await Task.Delay(2000);
+                                Program.helper.quickbuton(Program.PKTable.keyB, 250);
+                                await Task.Delay(2000);
+                                Program.helper.quickbuton(Program.PKTable.keyB, 250);
+                                await Task.Delay(2000);
+                                Program.helper.quickbuton(Program.PKTable.keyB, 250);
+                                await Task.Delay(2000);
+                                botState = (int)gtsbotstates.pressSeek;
+                                break;
+                            }
 
                             if ((int)Program.helper.lastRead == GTSScreen)
                             {
@@ -657,7 +716,7 @@ namespace Ledybot
                                 await Task.Delay(2000);
                                 Program.helper.quickbuton(Program.PKTable.keyB, 250);
                                 await Task.Delay(2000);
-                                botState = (int)gtsbotstates.botstart;
+                                botState = (int)gtsbotstates.pressSeek;
                                 break;
                             }
 
@@ -666,25 +725,14 @@ namespace Ledybot
                                 Program.f1.ChangeStatus("Recovery Mode - Search Screen Detected!");
                                 Program.helper.quickbuton(Program.PKTable.keyB, 250);
                                 await Task.Delay(2000);
-                                botState = (int)gtsbotstates.botstart;
+                                botState = (int)gtsbotstates.pressSeek;
                                 break;
                             }
 
                             if ((int)Program.helper.lastRead == SeekDepositScreen)
                             {
                                 Program.f1.ChangeStatus("Recovery Mode - Seek/Deposit Screen Detected!");
-                                botState = (int)gtsbotstates.botstart;
-                                break;
-                            }
-
-                            if ((int)Program.helper.lastRead == iPokemonToFind)
-                            {
-                                Program.f1.ChangeStatus("Recovery Mode - Search Screen Detected!");
-                                Program.helper.quicktouch(50, 0, commandtime);
-                                await Task.Delay(2000);
-                                Program.helper.quickbuton(Program.PKTable.keyB, 250);
-                                await Task.Delay(2000);
-                                botState = (int)gtsbotstates.botstart;
+                                botState = (int)gtsbotstates.pressSeek;
                                 break;
                             }
 
@@ -697,7 +745,7 @@ namespace Ledybot
                             }
 
                             await Task.Delay(10000);
-                            botState = (int)gtsbotstates.botstart;
+                            botState = (int)gtsbotstates.pressSeek;
                             break;
 
                         default:
@@ -707,8 +755,9 @@ namespace Ledybot
                     }
                 }
             }
-            catch
+            catch(Exception ex)
             {
+                MessageBox.Show(ex.ToString());
                 botState = (int)gtsbotstates.panic;
             }
             if (this.serverEndPoint != null)
