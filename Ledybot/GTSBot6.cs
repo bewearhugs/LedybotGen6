@@ -239,15 +239,6 @@ namespace Ledybot
             full = BitConverter.GetBytes(iPokemonToFindLevel);
             pokemonLevel = full[0];
 
-            /*
-            //OFFSET TEST
-            while (true)
-            {
-                await Program.helper.waitNTRread(0x62C2EC);
-                MessageBox.Show(Program.helper.lastRead.ToString("X"));
-            }
-            */
-
             try
             {
                 while (!botstop)
@@ -755,9 +746,8 @@ namespace Ledybot
                     }
                 }
             }
-            catch(Exception ex)
-            {
-                MessageBox.Show(ex.ToString());
+            catch
+            {            
                 botState = (int)gtsbotstates.panic;
             }
             if (this.serverEndPoint != null)
