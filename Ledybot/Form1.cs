@@ -52,15 +52,15 @@ namespace Ledybot
             delLastLog = new LogDelegate(lastLog);
             InitializeComponent();
             ofd_Injection.Title = "Select an EKX/PKX file";
-            ofd_Injection.Filter = "Gen 7 pokémon files|*.pk7";
-            ofd_WCInjection.Title = "Select a WC7 file";
-            ofd_WCInjection.Filter = "Gen 7 wondercard files|*.wc7";
+            ofd_Injection.Filter = "Gen 6 pokémon files|*.pk6";
+            ofd_WCInjection.Title = "Select a WC6 file";
+            ofd_WCInjection.Filter = "Gen 6 wondercard files|*.wc6";
             string path = @Application.StartupPath;
             ofd_Injection.InitialDirectory = path;
             ofd_WCInjection.InitialDirectory = path;
             getCountries();
             btn_Disconnect.Enabled = false;
-            this.combo_pkmnList.Items.AddRange(Program.PKTable.Species7);
+            this.combo_pkmnList.Items.AddRange(Program.PKTable.Species6);
         }
 
         public void startAutoDisconnect()
