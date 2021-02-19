@@ -2,22 +2,21 @@
 
 yet another Repo
 
-Currently working on Gen6 GTS Bot, not stable rn but usable.
 
 ## About
-Ledybot is a GTS giveaway bot for Gen6 & Gen7 Pokémon Games . Check out LedySync to go along with it, it's really cool: https://github.com/olliz0r/LedySync
+This Fork of Ledybot is a GTS giveaway bot for Gen6 Pokémon Games . Check out LedySync to go along with it, it's really cool: https://github.com/olliz0r/LedySync
 
-If you are rich and like what you see, feel free to throw me a donation at https://www.paypal.me/olliz0r !
+If you are rich and like what you see, feel free to throw me a donation at https://www.paypal.me/olliz0r ! (original code dev not me)
 
 ## Credits
-Huge thanks to EzPz/imaboy321 for rewriting, enhancing and maintaining this project for so long!
+Huge thanks to EzPz/imaboy321 for rewriting, enhancing and maintaining this project for so long! <-olliz0r/bappsack?); Thanks to bappsack for your ledybot gen6 code work, some minor edits and I'm rolling.
 
 ## Usage
 To get this to run you need a hacked 3DS with CFW. You need NTR (mode 3 version for o3ds) as well as Input Redirection (also mode 3 for o3ds)
 
 1. Boot your 3DS
-2. Start Boot NTR Selector
-3. Start Input Redicretion
+2. Start Boot NTR Selector (nanquitas)
+3. Start Input Redicretion (I found a prebuilt cia on a forum using google)
 4. Start Pokemon, connect to the Festival Plaza to get online
 5. Open the GTS until you see the "Seek Pokemon / Deposit Pokemon" screen
 6. Start Ledybot, fill in your 3DS ip address
@@ -58,5 +57,5 @@ To get this to run you need a hacked 3DS with CFW. You need NTR (mode 3 version 
 - LedySync is a additional program used to sync the trades of several Ledybots together. If you have run several Ledybots on the same pokemon in the past you have noticed that once they start trying to trade the same person one Ledybot messes up and keeps not trading anyone. A usual solution was to let different instances of Ledybot either search from different directions, on different pokemon or for different pokemon. With LedySync you can sync up several instances of Ledybot to make sure that they don't trade the same person at the same time and that they have a shared blacklist, preventing people from getting one pokemon off of each Ledybot instance. Check it out at https://github.com/olliz0r/LedySync to find a short instruction on how to use it.
 
 ## Additional thanks
-Thanks to kwsch and the guys from PKHeX for their work on the .pk7 format!
-Also thanks to Kazo for his NTR Input Redirection Client as well as Stary2001 for the actual .cia!
+Thanks to kwsch and the guys from PKHeX for their work on the .pk files format!
+Also thanks to Nanquitas for his NTR Input Redirection Client as well as Stary2001 for the actual .cia!
