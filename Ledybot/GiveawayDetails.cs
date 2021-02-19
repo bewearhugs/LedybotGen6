@@ -119,16 +119,16 @@ namespace Ledybot
                 {
                     if(Path.GetExtension(file) == ".pk6")
                     {
-                        addPK7(file);
+                        addPK6(file);
                     }
                 }
             } else if(Path.GetExtension(input) == ".pk6")
             {
-                addPK7(input);
+                addPK6(input);
             }
         }
 
-        private void addPK7(string input)
+        private void addPK6(string input)
         {
             Program.pkhex.Data = System.IO.File.ReadAllBytes(input);
             int dexNum = Program.pkhex.Species;
