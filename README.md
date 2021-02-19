@@ -5,6 +5,7 @@ yet another Repo
 
 ## About
 This Fork of Ledybot is a GTS giveaway bot for Gen6 Pokémon Games . Check out LedySync to go along with it, it's really cool: https://github.com/olliz0r/LedySync
+If you need assistance you can find me on discord https://discord.gg/PS5ADj3Gdv
 
 If you are rich and like what you see, feel free to throw me a donation at https://www.paypal.me/olliz0r ! (original code dev not me)
 
