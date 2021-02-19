@@ -117,12 +117,12 @@ namespace Ledybot
                 
                 foreach(string file in Directory.GetFiles(input))
                 {
-                    if(Path.GetExtension(file) == ".pk7")
+                    if(Path.GetExtension(file) == ".pk6")
                     {
                         addPK7(file);
                     }
                 }
-            } else if(Path.GetExtension(input) == ".pk7")
+            } else if(Path.GetExtension(input) == ".pk6")
             {
                 addPK7(input);
             }
