@@ -124,7 +124,7 @@ namespace Ledybot
             {
                 tb_Specific.Text = input + "\\";
             }
-            else if (Path.GetExtension(input) == ".pk7")
+            else if (Path.GetExtension(input) == ".pk6")
             {
                 //byte[] pkmEncrypted = 
                 Program.pkhex.Data = System.IO.File.ReadAllBytes(input);
