@@ -25,7 +25,7 @@ namespace Ledybot
         private IPEndPoint serverEndPoint = null;
         private bool useLedySync = false;
 
-        private const int SEARCHDIRECTION_FROMBACK = 0;
+        private const int SEARCHDIRECTION_FROMBACK = -1;
         private const int SEARCHDIRECTION_FROMBACKFIRSTPAGEONLY = 1;
         private const int SEARCHDIRECTION_FROMFRONT = 2;
 
@@ -397,7 +397,7 @@ namespace Ledybot
                                     {
                                         string szNickname = Encoding.Unicode.GetString(block, 0x4, 24).Substring(2).Trim('\0'); //fix to prevent nickname clipping. Count should be 24, 2 bytes per letter, 2x12=24, not 20.
 
-                                        string szFileToFind = details.Item2 + szNickname + ".pk7";
+                                        string szFileToFind = details.Item2 + szNickname + ".pk6";
                                         if (!File.Exists(szFileToFind))
                                         {
                                             continue;
@@ -538,9 +538,11 @@ namespace Ledybot
 
                                 //Now we have the right Entry, enter current viewed Entry
                                 Program.helper.quickbuton(Program.PKTable.keyA, 200);
-                                await Task.Delay(500);
+                                await Task.Delay(5000);
                                 Program.helper.quickbuton(Program.PKTable.keyA, 200);
-                                await Task.Delay(500);
+                                await Task.Delay(1500);
+                                Program.helper.quickbuton(Program.PKTable.keyA, 200);
+                                await Task.Delay(1500);
                                 Program.helper.quickbuton(Program.PKTable.keyA, 200);
                                 Program.f1.ChangeStatus("Trading pokemon on page " + (PageIndex / 100).ToString() + " index " + CurrentView.ToString() + "");
                                 await Task.Delay(10000);
