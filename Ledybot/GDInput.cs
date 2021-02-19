@@ -25,8 +25,8 @@ namespace Ledybot
         {
             OpenFileDialog dg = new OpenFileDialog();
             dg.InitialDirectory = @Application.StartupPath;
-            dg.Title = "Select a PK7 file";
-            dg.Filter = "Gen 7 pokémon files|*.pk7";
+            dg.Title = "Select a PK6 file";
+            dg.Filter = "Gen 6 pokémon files|*.pk6";
             if (dg.ShowDialog() == DialogResult.OK)
             {
                 tb_Default.Text = dg.FileName;
