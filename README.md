@@ -4,13 +4,13 @@ yet another Repo
 
 
 ## About
-This Fork of Ledybot is a GTS giveaway bot for Gen6 Pokémon Games . Check out LedySync to go along with it, it's really cool: https://github.com/olliz0r/LedySync
+This Fork of Ledybot is a GTS giveaway bot for Gen6 Pokémon Games,  The code for Gen 7 is still here just shuffled off to focus this Gen6 launch of the program . Check out LedySync to go along with it, it's really cool: https://github.com/olliz0r/LedySync
 If you need assistance you can find me on discord https://discord.gg/PS5ADj3Gdv
 
-If you are rich and like what you see, feel free to throw me a donation at https://www.paypal.me/olliz0r ! (original code dev not me)
+If you are rich and like what you see, feel free to throw me a donation at https://www.paypal.me/olliz0r ! (This paypal is for the original code dev not me)
 
 ## Credits
-Huge thanks to EzPz/imaboy321 for rewriting, enhancing and maintaining this project for so long! <-olliz0r/bappsack?); Thanks to bappsack for your ledybot gen6 code work, some minor edits and I'm rolling.
+Huge thanks to EzPz/imaboy321 for rewriting, enhancing and maintaining this project for so long! <-olliz0r/bappsack?); Thanks to bappsack for your ledybot gen6 code work, some minor edits and I'm rolling. Thanks to Santacrab420 for the help with GTS Starting point index!
 
 ## Usage
 To get this to run you need a hacked 3DS with CFW. You need NTR (mode 3 version for o3ds) as well as Input Redirection (also mode 3 for o3ds)
