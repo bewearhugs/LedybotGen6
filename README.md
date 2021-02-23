@@ -4,7 +4,8 @@ yet another Repo
 
 
 ## About
-This Fork of Ledybot is a GTS giveaway bot for Gen6 Pokémon Games,  The code for Gen 7 is still here just shuffled off to focus this Gen6 launch of the program . Check out LedySync to go along with it, it's really cool: https://github.com/olliz0r/LedySync
+This Fork of Ledybot is a GTS giveaway bot for Gen6 Pokémon Games,  The code for Gen 7 is still here just shuffled off to focus this Gen6 launch of the program . Also, check out LedySync to go along with it, it's really cool: https://github.com/olliz0r/LedySync
+
 If you need assistance you can find me on discord https://discord.gg/PS5ADj3Gdv
 
 If you are rich and like what you see, feel free to throw me a donation at https://www.paypal.me/olliz0r ! (This paypal is for the original code dev not me)
@@ -59,4 +60,3 @@ To get this to run you need a hacked 3DS with CFW. You need NTR (mode 3 version 
 
 ## Additional thanks
 Thanks to kwsch and the guys from PKHeX for their work on the .pk files format!
-Also thanks to Nanquitas for his NTR Input Redirection Client as well as Stary2001 for the actual .cia!
